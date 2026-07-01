@@ -1,8 +1,4 @@
-/**
- * Modelo de la Calculadora
- * Contiene el estado y la lógica de negocio
- * NO tiene dependencias de DOM
- */
+
 export class CalculatorModel {
     constructor() {
         this.expression = '';
@@ -42,19 +38,16 @@ export class CalculatorModel {
         }
 
         try {
-            // Reemplazar símbolos visuales por operadores JS
             let expr = this.expression
                 .replace(/×/g, '*')
                 .replace(/÷/g, '/');
 
-            // Evaluar de forma segura
             const result = new Function(`return (${expr})`)();
 
             if (!isFinite(result)) {
                 throw new Error('División por cero');
             }
 
-            // Formatear resultado
             const formatted = Number.isInteger(result) 
                 ? result.toString() 
                 : result.toFixed(6).replace(/\.?0+$/, '');
@@ -104,7 +97,8 @@ export class CalculatorModel {
             expression: this.expression,
             displayValue: this.expression || '0',
             resultDisplayed: this.resultDisplayed,
-            lastResult: this.lastResult
+            lastResult: this.lastResult,
+            error: false
         };
     }
 

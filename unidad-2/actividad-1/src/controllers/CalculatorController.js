@@ -1,8 +1,4 @@
-/**
- * Controlador de la Calculadora
- * Coordina el Modelo y la Vista
- * Maneja eventos y actualizaciones
- */
+
 export class CalculatorController {
     constructor(model, view) {
         this.model = model;
@@ -10,7 +6,6 @@ export class CalculatorController {
         this.isError = false;
         this.errorTimeout = null;
         
-        // Enlazar métodos
         this.handleButtonClick = this.handleButtonClick.bind(this);
         this.handleKeyboard = this.handleKeyboard.bind(this);
         this.updateView = this.updateView.bind(this);
@@ -20,16 +15,13 @@ export class CalculatorController {
      * Inicializar el controlador
      */
     init() {
-        // Configurar listeners
         this.view.addTableListener(this.handleButtonClick);
         document.addEventListener('keydown', this.handleKeyboard);
-        
-        // Actualizar vista inicial
         this.updateView();
     }
 
     /**
-     * Manejar click en botones (desde la vista)
+     * Manejar click en botones
      */
     handleButtonClick(button) {
         if (this.isError) return;
@@ -37,7 +29,6 @@ export class CalculatorController {
         const value = button.dataset.value;
         const buttonId = button.id;
 
-        // Limpiar error si existe
         this.view.clearError();
 
         if (buttonId === 'btnResult') {
@@ -67,7 +58,6 @@ export class CalculatorController {
             this.isError = true;
             this.view.showError();
             
-            // Auto-limpiar error después de 1.5 segundos
             if (this.errorTimeout) {
                 clearTimeout(this.errorTimeout);
             }
@@ -112,7 +102,6 @@ export class CalculatorController {
     handleKeyboard(event) {
         const key = event.key;
         
-        // Prevenir comportamiento por defecto
         const validKeys = ['0','1','2','3','4','5','6','7','8','9','.',
                           '+','-','*','/','Enter','Backspace','Delete','Escape'];
         if (validKeys.includes(key)) {
@@ -153,7 +142,7 @@ export class CalculatorController {
     }
 
     /**
-     * Actualizar la vista con el estado del modelo
+     * Actualizar la vista
      */
     updateView(state) {
         if (!state) {
@@ -174,7 +163,6 @@ export class CalculatorController {
         const state = this.model.reset();
         this.view.clearError();
         this.updateView(state);
-        console.log('🔄 Calculadora reseteada');
     }
 
     /**

@@ -6,7 +6,6 @@
     <title>Calculadora MVC - Web Component</title>
     
     <style>
-        /* ===== ESTILOS GLOBALES ===== */
         * {
             box-sizing: border-box;
             margin: 0;
@@ -72,7 +71,7 @@
             color: rgba(255,255,255,0.8);
             font-size: 13px;
             font-family: 'Courier New', monospace;
-            max-width: 400px;
+            max-width: 500px;
             text-align: left;
         }
 
@@ -87,35 +86,36 @@
         .info-box .error {
             color: #ff6b6b;
         }
+
+        .badge-no-innerhtml {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 
 <body>
     <h1 class="demo-title">🧮 Calculadora - Arquitectura MVC</h1>
     <p class="demo-subtitle">Modelo · Vista · Controlador</p>
+    <p class="demo-subtitle" style="margin-top: 5px;">
 
     <div class="demo-container">
-        <!-- Calculadora 1 -->
         <div class="demo-card">
             <h3>📱 Calculadora Estándar</h3>
             <x-calculator title="Mi Calculadora"></x-calculator>
         </div>
-
     </div>
 
-
-    <!-- ===== CARGAR EL WEB COMPONENT ===== -->
     <script type="module">
-        // Importar el WebComponent
         import './src/components/x-calculator.js';
         
         console.log('✅ Calculadora MVC cargada');
-        console.log('📦 Estructura: Model → View → Controller');
-        console.log('💡 Usa document.querySelector("x-calculator") para interactuar');
-        
-        // Ejemplo: buscar todas las calculadoras
-        const calculators = document.querySelectorAll('x-calculator');
-        console.log(`📊 Hay ${calculators.length} calculadora(s) en la página`);
     </script>
 </body>
 </html>
