@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora MVC - Web Component</title>
+    
+    <style>
+        /* ===== ESTILOS GLOBALES ===== */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .demo-title {
+            color: white;
+            font-size: 24px;
+            font-weight: 300;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            letter-spacing: 2px;
+        }
+
+        .demo-subtitle {
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            font-weight: 300;
+            margin-top: -10px;
+        }
+
+        .demo-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .demo-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.2);
+            text-align: center;
+        }
+
+        .demo-card h3 {
+            color: white;
+            font-weight: 300;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .info-box {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.8);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            max-width: 400px;
+            text-align: left;
+        }
+
+        .info-box code {
+            color: #ffd93d;
+        }
+
+        .info-box .highlight {
+            color: #6bcb77;
+        }
+
+        .info-box .error {
+            color: #ff6b6b;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 class="demo-title">🧮 Calculadora - Arquitectura MVC</h1>
+    <p class="demo-subtitle">Modelo · Vista · Controlador</p>
+
+    <div class="demo-container">
+        <!-- Calculadora 1 -->
+        <div class="demo-card">
+            <h3>📱 Calculadora Estándar</h3>
+            <x-calculator title="Mi Calculadora"></x-calculator>
+        </div>
+
+    </div>
+
+
+    <!-- ===== CARGAR EL WEB COMPONENT ===== -->
+    <script type="module">
+        // Importar el WebComponent
+        import './src/components/x-calculator.js';
+        
+        console.log('✅ Calculadora MVC cargada');
+        console.log('📦 Estructura: Model → View → Controller');
+        console.log('💡 Usa document.querySelector("x-calculator") para interactuar');
+        
+        // Ejemplo: buscar todas las calculadoras
+        const calculators = document.querySelectorAll('x-calculator');
+        console.log(`📊 Hay ${calculators.length} calculadora(s) en la página`);
+    </script>
+</body>
+</html>
