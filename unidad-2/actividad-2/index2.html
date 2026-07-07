@@ -26,7 +26,6 @@
       constructor() {
         super();
         
-        // Inicialización de las variables miembro para mantener la referencia de los nodos contenedores
         this.sidebar = document.createElement('nav');
         this.overlay = document.createElement('div');
         this.mainContainer = document.createElement('div');
@@ -34,20 +33,23 @@
         this.topBar = document.createElement('div');
         this.bodyContent = document.createElement('div');
         this.footer = document.createElement('footer');
+
+        // Pre-vinculamos los métodos al contexto de la clase para usarlos de forma segura en los listeners
+        this.handleSidebarOpen = this.handleSidebarOpen.bind(this);
+        this.handleSidebarClose = this.handleSidebarClose.bind(this);
+        this.handleAccordionToggle = this.handleAccordionToggle.bind(this);
+        this.handleWindowScroll = this.handleWindowScroll.bind(this);
       }
 
       connectedCallback() {
-        // Construcción imperativa y segura de la interfaz gráfica
         this.buildSidebar();
         this.buildOverlay();
         this.buildMainLayout();
 
-        // Enlazado de nodos al árbol del componente personalizado
         this.appendChild(this.sidebar);
         this.appendChild(this.overlay);
         this.appendChild(this.mainContainer);
 
-        // Activación de escuchadores de eventos reactivos
         this.setupEvents();
       }
 
@@ -57,7 +59,6 @@
         this.sidebar.style.width = "250px";
         this.sidebar.id = "mySidebar";
 
-        // Contenedor e imagen de marca institucional (W3Schools)
         const brandLink = document.createElement('a');
         brandLink.className = "w3-bar-item w3-button w3-border-bottom w3-large";
         brandLink.href = "#";
@@ -67,7 +68,6 @@
         brandLink.appendChild(brandImg);
         this.sidebar.appendChild(brandLink);
 
-        // Elemento interactivo para cerrar el menú lateral en dispositivos móviles
         const closeLink = document.createElement('a');
         closeLink.className = "w3-bar-item w3-button w3-hide-large w3-large";
         closeLink.href = "javascript:void(0)";
@@ -78,7 +78,6 @@
         closeLink.appendChild(closeIcon);
         this.sidebar.appendChild(closeLink);
 
-        // Generación dinámica de la botonera principal estática
         const menuItems = [
           { name: 'Home', style: 'w3-teal' },
           { name: 'Link 1', style: '' },
@@ -88,15 +87,14 @@
           { name: 'Link 5', style: '' }
         ];
 
-        menuItems.forEach(item => {
+        menuItems.forEach(function(item) {
           const a = document.createElement('a');
-          a.className = `w3-bar-item w3-button ${item.style}`.trim();
+          a.className = ("w3-bar-item w3-button " + item.style).trim();
           a.href = "#";
           a.textContent = item.name;
           this.sidebar.appendChild(a);
-        });
+        }.bind(this)); // Pasamos el contexto al bucle forEach tradicional
 
-        // Contenedor del acordeón desplegable (Dropdown)
         const accordionWrapper = document.createElement('div');
         
         const accordionToggle = document.createElement('a');
@@ -135,7 +133,6 @@
         this.mainContainer.className = "w3-main";
         this.mainContainer.style.marginLeft = "250px";
 
-        // 1. Configuración de barra superior con flexbox para alinear botones a la derecha (sin barra de búsqueda)
         this.topBar.className = "w3-container w3-top w3-theme w3-large";
         this.topBar.id = "myTop";
         this.topBar.style.display = "flex";
@@ -143,7 +140,6 @@
         this.topBar.style.alignItems = "center";
         this.topBar.style.height = "55px";
 
-        // Botón hamburguesa izquierdo (Visible solo en dispositivos móviles)
         const hamburgerContainer = document.createElement('p');
         hamburgerContainer.style.margin = "0";
         const hamburgerIcon = document.createElement('i');
@@ -152,7 +148,6 @@
         hamburgerContainer.appendChild(hamburgerIcon);
         this.topBar.appendChild(hamburgerContainer);
 
-        // Contenedor de botones del lado derecho del panel superior
         const rightGroup = document.createElement('div');
         rightGroup.className = "w3-right";
 
@@ -170,18 +165,15 @@
 
         this.mainContainer.appendChild(this.topBar);
 
-        // Bloque espaciador para desplazar el flujo del documento abajo de la barra fija
         const topSpacer = document.createElement('div');
         topSpacer.style.height = "55px";
         this.mainContainer.appendChild(topSpacer);
 
-        // 2. Cuerpo derecho (Se deja vacío bajo requerimiento específico del diseño de arquitectura)
         this.bodyContent.className = "w3-container";
         this.bodyContent.style.padding = "32px";
         this.bodyContent.style.minHeight = "calc(100vh - 170px)";
         this.mainContainer.appendChild(this.bodyContent);
 
-        // 3. Pie de página de la aplicación
         this.footer.className = "w3-container w3-theme";
         this.footer.style.padding = "32px";
         const footerParagraph = document.createElement('p');
@@ -190,46 +182,51 @@
         this.mainContainer.appendChild(this.footer);
       }
 
-      setupEvents() {
-        const toggleSidebar = (show) => {
-          this.sidebar.style.display = show ? "block" : "none";
-          this.overlay.style.display = show ? "block" : "none";
-        };
+      // --- Métodos manejadores escritos en funciones estándar ---
+      handleSidebarOpen() {
+        this.sidebar.style.display = "block";
+        this.overlay.style.display = "block";
+      }
 
-        // Escuchadores de eventos para la barra lateral responsiva
-        this.querySelector('#btnSidebarOpen').addEventListener('click', () => toggleSidebar(true));
-        this.querySelector('#btnSidebarClose').addEventListener('click', () => toggleSidebar(false));
-        this.overlay.addEventListener('click', () => toggleSidebar(false));
+      handleSidebarClose() {
+        this.sidebar.style.display = "none";
+        this.overlay.style.display = "none";
+      }
 
-        // Interactividad del menú de acordeón (Dropdown)
+      handleAccordionToggle() {
         const accordionToggle = this.querySelector('#btnAccordionToggle');
         const accordionContent = this.querySelector('#appAccordionMenu');
 
-        accordionToggle.addEventListener('click', () => {
-          if (accordionContent.classList.contains('w3-show')) {
-            accordionContent.classList.remove('w3-show');
-            accordionToggle.classList.remove('w3-theme');
-          } else {
-            accordionContent.classList.add('w3-show');
-            accordionToggle.classList.add('w3-theme');
-          }
-        });
+        if (accordionContent.classList.contains('w3-show')) {
+          accordionContent.classList.remove('w3-show');
+          accordionToggle.classList.remove('w3-theme');
+        } else {
+          accordionContent.classList.add('w3-show');
+          accordionToggle.classList.add('w3-theme');
+        }
+      }
 
-        // Efecto dinámico de elevación (sombra de tarjeta) superior al scrollear la página
-        window.addEventListener('scroll', () => {
-          if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
-            this.topBar.classList.add("w3-card-4", "w3-animate-opacity");
-          } else {
-            this.topBar.classList.remove("w3-card-4", "w3-animate-opacity");
-          }
-        });
+      handleWindowScroll() {
+        if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
+          this.topBar.classList.add("w3-card-4", "w3-animate-opacity");
+        } else {
+          this.topBar.classList.remove("w3-card-4", "w3-animate-opacity");
+        }
+      }
+
+      setupEvents() {
+        // Asignación de los escuchadores utilizando los métodos previamente enlazados en el constructor
+        this.querySelector('#btnSidebarOpen').addEventListener('click', this.handleSidebarOpen);
+        this.querySelector('#btnSidebarClose').addEventListener('click', this.handleSidebarClose);
+        this.overlay.addEventListener('click', this.handleSidebarClose);
+        this.querySelector('#btnAccordionToggle').addEventListener('click', this.handleAccordionToggle);
+        
+        window.addEventListener('scroll', this.handleWindowScroll);
       }
     }
 
-    // Registro formal del WebComponent
     customElements.define('wc-application-view', WCApplicationView);
 
-    // Punto de entrada de la aplicación
     function main() {
       const view = new WCApplicationView();
       document.body.appendChild(view);
