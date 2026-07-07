@@ -109,6 +109,9 @@
         // Invoca obligatoriamente al constructor de la clase base HTMLElement
         super();
 
+        // Vinculación del manejador tradicional al contexto de la clase
+        this.handleButtonClick = this.handleButtonClick.bind(this);
+
         // 1. Definición y creación de los miembros del elemento
         this.table = document.createElement('table');
         this.display = document.createElement('input');
@@ -118,7 +121,7 @@
         this.display.className = 'calc-display';
         this.display.disabled = true;
 
-        // 2. Construcción de la matriz estructural de la calculadora empleando los recursos solicitados
+        // 2. Construcción de la matriz estructural
         this.buildStructure();
 
         // 3. Inserción del nodo raíz al árbol del componente
@@ -134,7 +137,7 @@
         rowDisplay.appendChild(tdDisplay);
         this.table.appendChild(rowDisplay);
 
-        // Definición matricial de los botones para evitar duplicación de código imperativo
+        // Definición matricial de los botones
         const layout = [
           [['7', 'btn7'], ['8', 'btn8'], ['9', 'btn9'], ['+', 'btnPlus']],
           [['4', 'btn4'], ['5', 'btn5'], ['6', 'btn6'], ['-', 'btnMinus']],
@@ -142,9 +145,13 @@
           [['0', 'btn0'], ['.', 'btnDot'], ['=', 'btnResult'], ['/', 'btnDivision']]
         ];
 
-        layout.forEach(rowData => {
+        // Recorrido con funciones clásicas y pasaje explícito de contexto
+        layout.forEach(function(rowData) {
           const row = document.createElement('tr');
-          rowData.forEach(([text, id]) => {
+          rowData.forEach(function(buttonData) {
+            const text = buttonData[0];
+            const id = buttonData[1];
+            
             const td = document.createElement('td');
             const btn = document.createElement('button');
             btn.id = id;
@@ -154,7 +161,7 @@
             row.appendChild(td);
           });
           this.table.appendChild(row);
-        });
+        }.bind(this));
 
         // Fila Última: Botón de Borrado
         const rowDelete = document.createElement('tr');
@@ -171,7 +178,7 @@
         this.table.appendChild(rowDelete);
       }
 
-      // Manejador centralizado para procesar los clics mediante delegación
+      // Manejador escrito de forma tradicional
       handleButtonClick(event) {
         const target = event.target;
         if (target.tagName !== 'BUTTON') return;
@@ -205,25 +212,21 @@
       // Ciclo de vida: Inserción en el DOM
       connectedCallback() {
         console.log('Calculadora agregada al DOM');
-        
-        // Conservamos la referencia léxica de la clase en el escuchador
-        this._listener = this.handleButtonClick.bind(this);
-        this.table.addEventListener('click', this._listener);
+        this.table.addEventListener('click', this.handleButtonClick);
       }
 
       // Ciclo de vida: Eliminación del DOM
       disconnectedCallback() {
         console.log('Calculadora removida del DOM');
-        this.table.removeEventListener('click', this._listener);
+        this.table.removeEventListener('click', this.handleButtonClick);
       }
     }
 
-    // Registro del nuevo elemento personalizado en el motor del navegador
+    // Registro del elemento personalizado
     customElements.define('custom-calculator', CustomCalculator);
 
     // Función principal de arranque
     function main() {
-      // Instanciación dinámica basada en la abstracción orientada a objetos de la plantilla
       const myCalculator = new CustomCalculator();
       document.body.appendChild(myCalculator);
     }

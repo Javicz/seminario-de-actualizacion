@@ -91,7 +91,7 @@
       background-color: #bfdbfe;
     }
 
-    /* Botón de borrado general */
+    /* Botón de borrado general al estilo de la plantilla base */
     .btnDelete {
       color: white;
       font-family: inherit;
@@ -166,43 +166,36 @@
       const display = document.getElementById('display');
       const table = document.querySelector('table');
 
-      // Delegación de eventos óptima: escuchamos los clicks de toda la tabla de manera unificada
-      table.addEventListener('click', (event) => {
+      // Delegación de eventos con función tradicional anónima
+      table.addEventListener('click', function (event) {
         const target = event.target;
 
-        // Validamos que lo que recibió el click sea exclusivamente un elemento de tipo botón
+        // Validamos que el elemento que recibió el click sea un botón
         if (target.tagName !== 'BUTTON') return;
 
         const id = target.id;
         const value = target.textContent;
 
         if (id === 'btnDelete') {
-          // Operación de limpieza total del buffer
           display.value = '';
         } else if (id === 'btnResult') {
-          // Evaluación matemática del string acumulado en pantalla
           if (display.value.trim() !== '') {
             try {
-              // Evaluamos aritméticamente la expresión
               const resultado = eval(display.value);
-              // Validamos divisiones por cero indeterminadas o cómputos erróneos
               display.value = (resultado === Infinity || isNaN(resultado)) ? 'Error' : resultado;
             } catch (error) {
               display.value = 'Error';
             }
           }
         } else {
-          // Si la pantalla muestra un error previo, limpiamos antes de concatenar un nuevo carácter
           if (display.value === 'Error') {
             display.value = '';
           }
-          // Concatenamos el valor del botón numérico u operador presionado
           display.value += value;
         }
       });
     }
 
-    // Inicialización del proceso principal una vez que la ventana carga la estructura
     window.onload = main;
   </script>
 </body>
