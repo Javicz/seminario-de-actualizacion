@@ -3,7 +3,7 @@ class GraphicEqualizer extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
 
-    // Estado interno del componente
+    // Estado interno inicial del componente
     this._data = {
       preset: 'Manual',
       bands: [
@@ -19,6 +19,9 @@ class GraphicEqualizer extends HTMLElement {
         { frequency: '16.5k', db: 0 }
       ]
     };
+
+    // Pre-vinculamos los contextos de las funciones clásicas
+    this.handleSliderInput = this.handleSliderInput.bind(this);
   }
 
   connectedCallback() {
@@ -26,7 +29,7 @@ class GraphicEqualizer extends HTMLElement {
     this.setupEventListeners();
   }
 
-  // --- API  ---
+  // --- API Requerida por la Consigna ---
   getData() {
     return JSON.parse(JSON.stringify(this._data));
   }
@@ -34,20 +37,19 @@ class GraphicEqualizer extends HTMLElement {
   setData(newData) {
     if (!newData || !Array.isArray(newData.bands)) return;
     this._data = JSON.parse(JSON.stringify(newData));
-    this.updateUI(); // Sincroniza la interfaz gráfica de forma atómica
+    this.updateUI(); // Sincroniza la interfaz de forma instantánea e irreversible
   }
 
-  // --- Renderizado 100% imperativo mediante el DOM ---
+  // --- Construcción e Inserción de Nodos mediante DOM Puro ---
   render() {
-    // Limpiamos el shadowRoot de cualquier contenido previo
     this.shadowRoot.textContent = '';
 
-    // 1. Estilos encapsulados mediante una etiqueta <style>
+    // 1. Estilos encapsulados con diseño retro Win95 / Classic
     const style = document.createElement('style');
     style.textContent = `
       :host {
         display: inline-block;
-        font-family: 'Courier New', Courier, monospace;
+        font-family: Arial, sans-serif;
         background-color: #d4d0c8;
         border: 2px solid;
         border-color: #fff #404040 #404040 #fff;
@@ -82,6 +84,7 @@ class GraphicEqualizer extends HTMLElement {
         background: white;
         border: 2px solid;
         border-color: #404040 #fff #fff #404040;
+        font-size: 12px;
       }
       .btn-retro {
         background: #d4d0c8;
@@ -96,19 +99,19 @@ class GraphicEqualizer extends HTMLElement {
       }
       .bands-container {
         display: flex;
-        border: 1px inset #fff;
+        border: 2px solid;
+        border-color: #404040 #fff #fff #404040;
         background-color: #d4d0c8;
         padding: 5px;
+        gap: 2px;
       }
       .band {
         display: flex;
         flex-direction: column;
         align-items: center;
         font-size: 11px;
-        width: 45px;
-        border: 1px solid #808080;
+        width: 48px;
         padding: 4px 0;
-        background: #d4d0c8;
       }
       .slider-wrapper {
         height: 120px;
@@ -143,23 +146,21 @@ class GraphicEqualizer extends HTMLElement {
     windowTitle.textContent = 'Graphic EQ';
     this.shadowRoot.appendChild(windowTitle);
 
-    // 3. Contenedor estructural
     const container = document.createElement('div');
     container.className = 'container';
 
-    // 4. Panel Izquierdo (Controles y ecualizador)
     const eqInterface = document.createElement('div');
     eqInterface.className = 'eq-interface';
 
-    // 5. Barra Superior (Select y botones retro)
+    // 3. Barra de Control Superior
     const topBar = document.createElement('div');
     topBar.className = 'top-bar';
 
     const select = document.createElement('select');
     select.id = 'presetSelect';
-    const initialOption = document.createElement('option');
-    initialOption.textContent = this._data.preset;
-    select.appendChild(initialOption);
+    const opt = document.createElement('option');
+    opt.textContent = this._data.preset;
+    select.appendChild(opt);
     topBar.appendChild(select);
 
     const btnSave = document.createElement('button');
@@ -175,13 +176,12 @@ class GraphicEqualizer extends HTMLElement {
 
     eqInterface.appendChild(topBar);
 
-    // 6. Grid contenedor de las bandas (Le asignamos un ID para adjuntar eventos allí)
+    // 4. Grid de Bandas Deslizantes
     const bandsContainer = document.createElement('div');
     bandsContainer.className = 'bands-container';
     bandsContainer.id = 'bandsContainer';
 
-    // Iteramos por cada banda construyendo sub-nodos explícitos
-    this._data.bands.forEach((band, index) => {
+    this._data.bands.forEach(function(band, index) {
       const bandDiv = document.createElement('div');
       bandDiv.className = 'band';
       bandDiv.dataset.index = index;
@@ -204,25 +204,24 @@ class GraphicEqualizer extends HTMLElement {
 
       const dbLabel = document.createElement('div');
       dbLabel.className = 'db-label';
-      dbLabel.textContent = `${band.db >= 0 ? '+' : ''}${band.db}dB`;
+      dbLabel.textContent = (band.db >= 0 ? '+' : '') + band.db + 'dB';
 
-      // Encadenar la jerarquía de la banda
       bandDiv.appendChild(freqLabel);
       bandDiv.appendChild(sliderWrapper);
       bandDiv.appendChild(dbLabel);
       
       bandsContainer.appendChild(bandDiv);
-    });
+    }.bind(this));
 
     eqInterface.appendChild(bandsContainer);
     container.appendChild(eqInterface);
 
-    // 7. Panel Lateral Derecho (Acciones)
+    // 5. Panel Lateral de Comandos de Salida
     const actionsSidebar = document.createElement('div');
     actionsSidebar.className = 'actions-sidebar';
 
     const buttons = ['OK', 'Cancel', 'Audition', 'Help'];
-    buttons.forEach(text => {
+    buttons.forEach(function(text) {
       const btn = document.createElement('button');
       btn.className = 'btn-retro';
       btn.textContent = text;
@@ -233,49 +232,50 @@ class GraphicEqualizer extends HTMLElement {
     this.shadowRoot.appendChild(container);
   }
 
-  // --- Gestión de Eventos reactivos ---
-  setupEventListeners() {
-    // Captura eficiente delegada en el contenedor padre
-    this.shadowRoot.getElementById('bandsContainer').addEventListener('input', (event) => {
-      if (event.target.matches('input[type="range"]')) {
-        const bandElement = event.target.closest('.band');
-        const index = parseInt(bandElement.dataset.index, 10);
-        const newValue = parseFloat(event.target.value);
+  // --- Gestión de Eventos Tradicionales ---
+  handleSliderInput(event) {
+    if (event.target.matches('input[type="range"]')) {
+      const bandElement = event.target.closest('.band');
+      const index = parseInt(bandElement.dataset.index, 10);
+      const newValue = parseFloat(event.target.value);
 
-        // 1. Modificar el estado en memoria
-        this._data.bands[index].db = newValue;
+      // Sincronización con el modelo de datos interno
+      this._data.bands[index].db = newValue;
 
-        // 2. Modificar solo el nodo textual del decibelio
-        const dbLabel = bandElement.querySelector('.db-label');
-        dbLabel.textContent = `${newValue >= 0 ? '+' : ''}${newValue}dB`;
-      }
-    });
+      // Actualización reactiva y aislada del nodo de texto
+      const dbLabel = bandElement.querySelector('.db-label');
+      dbLabel.textContent = (newValue >= 0 ? '+' : '') + newValue + 'dB';
+    }
   }
 
-  // --- Sincronización invocada de forma externa mediante setData() ---
+  setupEventListeners() {
+    const bandsContainer = this.shadowRoot.getElementById('bandsContainer');
+    bandsContainer.addEventListener('input', this.handleSliderInput);
+  }
+
+  // --- Renderizado Atómico disparado por setData() ---
   updateUI() {
     const select = this.shadowRoot.getElementById('presetSelect');
     if (select) {
-      select.textContent = ''; // Limpieza atómica de nodos
+      select.textContent = '';
       const option = document.createElement('option');
       option.textContent = this._data.preset;
       select.appendChild(option);
     }
 
-    this._data.bands.forEach((band, index) => {
-      const bandElement = this.shadowRoot.querySelector(`.band[data-index="${index}"]`);
+    this._data.bands.forEach(function(band, index) {
+      const bandElement = this.shadowRoot.querySelector('.band[data-index="' + index + '"]');
       if (bandElement) {
         const input = bandElement.querySelector('input[type="range"]');
         const dbLabel = bandElement.querySelector('.db-label');
         
         if (input) input.value = band.db;
         if (dbLabel) {
-          dbLabel.textContent = `${band.db >= 0 ? '+' : ''}${band.db}dB`;
+          dbLabel.textContent = (band.db >= 0 ? '+' : '') + band.db + 'dB';
         }
       }
-    });
+    }.bind(this));
   }
 }
 
-// Registro del elemento personalizado
 customElements.define('graphic-equalizer', GraphicEqualizer);

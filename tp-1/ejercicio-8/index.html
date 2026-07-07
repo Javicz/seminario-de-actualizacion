@@ -3,12 +3,32 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TP 1 - Ejercicio 8: Reportes e Impresión</title>
+  <title>TP 1 - Ejercicio 8: Visualizador Meteorológico con Exportación</title>
   <script src="WeatherDataUltimate.js" defer></script>
+  <style>
+    /* Estilos para impresión */
+    @media print {
+      body { 
+        margin: 0; 
+        padding: 20px; 
+        background: white !important;
+      }
+      .no-print { 
+        display: none !important; 
+      }
+    }
+  </style>
 </head>
-<body style="background-color: #f1f5f9; padding: 30px; font-family: sans-serif;">
+<body style="background-color: #f8fafc; margin: 0; padding: 40px;">
 
-  <weather-data-ultimate></weather-data-ultimate>
+  <div style="text-align: center; margin-bottom: 20px;">
+    <h1 style="color: #1e293b; font-size: 24px; font-family: sans-serif;">Visualizador Meteorológico con Exportación</h1>
+    <p style="color: #475569; font-family: sans-serif;">
+      Haga clic en los botones de exportación para descargar los datos en diferentes formatos.
+    </p>
+  </div>
+
+  <weather-data-extended></weather-data-extended>
 
 </body>
 </html>

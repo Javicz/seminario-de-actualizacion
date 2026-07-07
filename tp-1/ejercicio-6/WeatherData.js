@@ -4,7 +4,7 @@ class WeatherData extends HTMLElement {
     // Encapsulamos la estructura y estilos usando Shadow DOM en modo abierto
     this.attachShadow({ mode: 'open' });
 
-    // Estado interno inicial con la totalidad de los datos de la imagen
+    // Estado interno inicial con la totalidad de los datos requeridos
     this._data = {
       ciudad: "Mar del Plata",
       registros: [
@@ -28,20 +28,19 @@ class WeatherData extends HTMLElement {
     this.render();
   }
 
-  // --- REQUERIMIENTO: Método público para obtener los promedios de todas las temperaturas ---
+  // --- Método público para obtener los promedios de todas las temperaturas ---
   getTemperaturesAverage() {
     const total = this._data.registros.length;
     if (total === 0) return { maxPromedio: 0, minPromedio: 0, mediaPromedio: 0 };
 
-    // Reducimos las filas acumulando los valores térmicos
-    const sumas = this._data.registros.reduce((acc, reg) => {
+    // Reducimos las filas acumulando los valores térmicos mediante función clásica
+    const sumas = this._data.registros.reduce(function(acc, reg) {
       acc.max += reg.max;
       acc.min += reg.min;
       acc.media += reg.media;
       return acc;
     }, { max: 0, min: 0, media: 0 });
 
-    // Retorna el objeto formateado y parseado correctamente
     return {
       ciudad: this._data.ciudad,
       promedioTemperaturaMaxima: parseFloat((sumas.max / total).toFixed(1)),
@@ -58,15 +57,13 @@ class WeatherData extends HTMLElement {
   setData(newData) {
     if (!newData || !Array.isArray(newData.registros)) return;
     this._data = JSON.parse(JSON.stringify(newData));
-    this.render(); // Actualiza la vista de forma reactiva al asignar datos
+    this.render(); 
   }
 
   // --- Renderizado Imperativo Estricto ---
   render() {
-    // Vaciado seguro del Shadow Root
     this.shadowRoot.textContent = '';
 
-    // Creación dinámica de la hoja de estilos
     const style = document.createElement('style');
     style.textContent = `
       :host {
@@ -121,18 +118,15 @@ class WeatherData extends HTMLElement {
     `;
     this.shadowRoot.appendChild(style);
 
-    // Título del módulo meteorológico
     const title = document.createElement('h2');
-    title.textContent = `Climatología Completa - ${this._data.ciudad}`;
+    title.textContent = 'Climatología Completa - ' + this._data.ciudad;
     this.shadowRoot.appendChild(title);
 
-    // Contenedor responsivo
     const wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper';
 
     const table = document.createElement('table');
     
-    // Encabezados de la tabla
     const headerRow = document.createElement('tr');
     const headers = [
       'Mes', 
@@ -144,15 +138,14 @@ class WeatherData extends HTMLElement {
       'H. Sol'
     ];
     
-    headers.forEach(text => {
+    headers.forEach(function(text) {
       const th = document.createElement('th');
       th.textContent = text;
       headerRow.appendChild(th);
     });
     table.appendChild(headerRow);
 
-    // Filas de datos mapeadas celda por celda
-    this._data.registros.forEach(reg => {
+    this._data.registros.forEach(function(reg) {
       const row = document.createElement('tr');
 
       const cellMes = document.createElement('td');
@@ -181,7 +174,6 @@ class WeatherData extends HTMLElement {
       cellSol.className = 'sol';
       cellSol.textContent = reg.sol;
 
-      // Adjuntar celdas a la fila actual de manera ordenada
       row.appendChild(cellMes);
       row.appendChild(cellMax);
       row.appendChild(cellMin);
@@ -198,5 +190,4 @@ class WeatherData extends HTMLElement {
   }
 }
 
-// Registro en el motor del navegador
 customElements.define('weather-data', WeatherData);

@@ -6,6 +6,7 @@ class WeatherDataExtended extends HTMLElement {
     // Propiedad de control para la unidad de temperatura actual ('C' o 'F')
     this._unit = 'C';
 
+    // CORRECCIÓN: Se cambiaron los "=" por ":" para evitar el SyntaxError
     this._data = {
       ciudad: "Mar del Plata",
       registros: [
@@ -23,27 +24,27 @@ class WeatherDataExtended extends HTMLElement {
         { mes: "Dic", max: 24.9, min: 12.8, media: 18.8, lluvia: 92, diasLluvia: 9, sol: 275 }
       ]
     };
+
+    this.handleUnitToggle = this.handleUnitToggle.bind(this);
   }
 
   connectedCallback() {
     this.render();
   }
 
-  // --- Función auxiliar de conversión ---
   formatTemp(celsiusValue) {
     if (this._unit === 'F') {
-      const fahrenheit = (celsiusValue * 9) / 5 + 32;
-      return `${fahrenheit.toFixed(1)}°F`;
+      var fahrenheit = (celsiusValue * 9) / 5 + 32;
+      return fahrenheit.toFixed(1) + '°F';
     }
-    return `${celsiusValue.toFixed(1)}°C`;
+    return celsiusValue.toFixed(1) + '°C';
   }
 
-  // --- API Estándar y Métodos  ---
   getTemperaturesAverage() {
-    const total = this._data.registros.length;
+    var total = this._data.registros.length;
     if (total === 0) return { maxPromedio: 0, minPromedio: 0, mediaPromedio: 0 };
 
-    const sumas = this._data.registros.reduce((acc, reg) => {
+    var sumas = this._data.registros.reduce(function(acc, reg) {
       acc.max += reg.max;
       acc.min += reg.min;
       acc.media += reg.media;
@@ -68,11 +69,15 @@ class WeatherDataExtended extends HTMLElement {
     this.render();
   }
 
-  // --- Renderizado estructural ---
+  handleUnitToggle() {
+    this._unit = this._unit === 'C' ? 'F' : 'C';
+    this.render();
+  }
+
   render() {
     this.shadowRoot.textContent = '';
 
-    const style = document.createElement('style');
+    var style = document.createElement('style');
     style.textContent = `
       :host {
         display: block;
@@ -144,78 +149,70 @@ class WeatherDataExtended extends HTMLElement {
     `;
     this.shadowRoot.appendChild(style);
 
-    // Contenedor superior para el título y el botón interactivo
-    const headerContainer = document.createElement('div');
+    var headerContainer = document.createElement('div');
     headerContainer.className = 'header-container';
 
-    const title = document.createElement('h2');
-    title.textContent = `Climatología Completa - ${this._data.ciudad}`;
+    var title = document.createElement('h2');
+    title.textContent = 'Climatología Completa - ' + this._data.ciudad;
     headerContainer.appendChild(title);
 
-    // Botón para alternar unidades de medida
-    const toggleButton = document.createElement('button');
+    var toggleButton = document.createElement('button');
     toggleButton.className = 'btn-toggle';
-    toggleButton.textContent = `Cambiar a °${this._unit === 'C' ? 'F' : 'C'}`;
-    
-    // Evento dinámico para alternar el estado y re-renderizar
-    toggleButton.addEventListener('click', () => {
-      this._unit = this._unit === 'C' ? 'F' : 'C';
-      this.render(); 
-    });
+    toggleButton.textContent = 'Cambiar a °' + (this._unit === 'C' ? 'F' : 'C');
+    toggleButton.addEventListener('click', this.handleUnitToggle);
     headerContainer.appendChild(toggleButton);
 
     this.shadowRoot.appendChild(headerContainer);
 
-    const wrapper = document.createElement('div');
+    var wrapper = document.createElement('div');
     wrapper.className = 'table-wrapper';
 
-    const table = document.createElement('table');
+    var table = document.createElement('table');
     
-    const headerRow = document.createElement('tr');
-    const headers = [
+    var headerRow = document.createElement('tr');
+    var headers = [
       'Mes', 
-      `T. Máx (°${this._unit})`, 
-      `T. Mín (°${this._unit})`, 
-      `T. Med (°${this._unit})`, 
+      'T. Máx (°' + this._unit + ')', 
+      'T. Mín (°' + this._unit + ')', 
+      'T. Med (°' + this._unit + ')', 
       'Lluvia (mm)', 
       'Días Lluvia', 
       'H. Sol'
     ];
     
-    headers.forEach(text => {
-      const th = document.createElement('th');
+    headers.forEach(function(text) {
+      var th = document.createElement('th');
       th.textContent = text;
       headerRow.appendChild(th);
     });
     table.appendChild(headerRow);
 
-    // Renderizado de filas procesando dinámicamente las celdas térmicas
-    this._data.registros.forEach(reg => {
-      const row = document.createElement('tr');
+    this._data.registros.forEach(function(reg) {
+      var row = document.createElement('tr');
 
-      const cellMes = document.createElement('td');
+      var cellMes = document.createElement('td');
       cellMes.textContent = reg.mes;
 
-      const cellMax = document.createElement('td');
+      var cellMax = document.createElement('td');
       cellMax.className = 'max';
       cellMax.textContent = this.formatTemp(reg.max);
 
-      const cellMin = document.createElement('td');
+      var cellMin = document.createElement('td');
       cellMin.className = 'min';
       cellMin.textContent = this.formatTemp(reg.min);
 
-      const cellMed = document.createElement('td');
+      var cellMed = document.createElement('td');
       cellMed.className = 'med';
       cellMed.textContent = this.formatTemp(reg.media);
 
-      const cellLluvia = document.createElement('td');
+      var cellLluvia = document.createElement('td');
       cellLluvia.className = 'lluvia';
       cellLluvia.textContent = reg.lluvia;
 
-      const cellDias = document.createElement('td');
+      var cellDias = document.createElement('td');
       cellDias.textContent = reg.diasLluvia;
 
-      const cellSol = document.createElement('td');
+      var cellSol = document.createElement('td');
       cellSol.className = 'sol';
       cellSol.textContent = reg.sol;
 
@@ -228,7 +225,7 @@ class WeatherDataExtended extends HTMLElement {
       row.appendChild(cellSol);
       
       table.appendChild(row);
-    });
+    }.bind(this));
 
     wrapper.appendChild(table);
     this.shadowRoot.appendChild(wrapper);
