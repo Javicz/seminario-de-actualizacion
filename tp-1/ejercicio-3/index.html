@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test - Graphic Equalizer</title>
+  
+  <script src="GraphicEqualizer.js" defer></script>
+</head>
+<body style="background-color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
+
+  <graphic-equalizer id="miEcualizador"></graphic-equalizer>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const eq = document.getElementById('miEcualizador');
+
+      // Ejemplo: Pasados 3 segundos, simulamos la carga de un preset "Rock" usando setData()
+      setTimeout(() => {
+        console.log("Aplicando nuevo preset mediante setData()...");
+        
+        eq.setData({
+          preset: 'Rock Preset',
+          bands: [
+            { frequency: '32Hz', db: 4.5 },
+            { frequency: '64Hz', db: 3 },
+            { frequency: '130Hz', db: -1.5 },
+            { frequency: '260Hz', db: -4 },
+            { frequency: '500Hz', db: -3 },
+            { frequency: '1k', db: 1 },
+            { frequency: '2k', db: 3.5 },
+            { frequency: '4k', db: 5 },
+            { frequency: '8.3k', db: 5.5 },
+            { frequency: '16.5k', db: 6 }
+          ]
+        });
+
+        // Verificamos que getData() nos devuelva el estado actualizado
+        console.log("Datos actuales en el componente:", eq.getData());
+      }, 3000);
+    });
+  </script>
+
+</body>
+</html>

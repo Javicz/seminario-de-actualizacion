@@ -1,430 +1,209 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="utf-8" />
-    <title>Calculadora Web Component</title>
-    
-    <style>
-        /* ============================================================
-           ESTILOS GLOBALES (SOLO PARA EL FONDO)
-           ============================================================ */
-        body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            flex-direction: column;
-            gap: 20px;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora Clásica</title>
+  <style>
+    /* Estilos de maquetación y contenedor general */
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        .demo-title {
-            color: white;
-            font-size: 20px;
-            font-weight: 300;
-        }
-    </style>
+    table {
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-collapse: separate;
+      border-spacing: 10px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+      width: 320px;
+    }
+
+    td {
+      border: none;
+    }
+
+    /* Estilos del Display de visualización */
+    #display {
+      width: 100%;
+      height: 55px;
+      background-color: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      box-sizing: border-box;
+      padding: 0 15px;
+      font-size: 24px;
+      text-align: right;
+      color: #1e293b;
+      font-weight: 600;
+    }
+
+    /* Estilos generales para los botones estándar */
+    button {
+      width: 100%;
+      height: 50px;
+      font-size: 18px;
+      font-weight: 600;
+      font-family: inherit;
+      color: #334155;
+      background-color: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.15s ease, transform 0.05s ease;
+    }
+
+    button:hover {
+      background-color: #e2e8f0;
+    }
+
+    button:active {
+      transform: scale(0.96);
+    }
+
+    /* Estilos específicos para los operadores */
+    #btnPlus, #btnMinus, #btnMultiply, #btnDivision {
+      background-color: #ffedd5;
+      color: #ea580c;
+      border-color: #fed7aa;
+    }
+
+    #btnPlus:hover, #btnMinus:hover, #btnMultiply:hover, #btnDivision:hover {
+      background-color: #fed7aa;
+    }
+
+    /* Estilo para el botón de ejecución de resultado */
+    #btnResult {
+      background-color: #dbeafe;
+      color: #2563eb;
+      border-color: #bfdbfe;
+    }
+
+    #btnResult:hover {
+      background-color: #bfdbfe;
+    }
+
+    /* Botón de borrado general */
+    .btnDelete {
+      color: white;
+      font-family: inherit;
+      font-weight: bold;
+      font-size: 15px;
+      background-color: #ef4444;
+      border: 1px solid #dc2626;
+      box-shadow: 0px 4px #b91c1c;
+      width: 100%;
+      height: 45px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+
+    .btnDelete:hover {
+      background-color: #dc2626;
+    }
+
+    .btnDelete:active {
+      box-shadow: 0px 1px #b91c1c;
+      transform: translateY(3px);
+    }
+  </style>
 </head>
-
 <body>
-    <h1 class="demo-title"> Calculadora - Web Component</h1>
 
-    <x-calculator title="Mi Calculadora"></x-calculator>
+  <table>
+    <tr>
+      <td colspan="4">
+        <input id="display" type="text" value="" disabled />
+      </td>
+    </tr>
 
-    <script>
-        // ============================================================
-        // WEB COMPONENT 
-        // ============================================================
-        
-        // ---- 1. DEFINIR LA CLASE ----
-        class SimpleCalculator extends HTMLElement {
-            
-            // ---- 2. CONSTRUCTOR ----
-            constructor() {
-                super(); // Siempre llamar a super() primero
-                
-                //  Crear Shadow DOM (aislamiento)
-                this.attachShadow({ mode: 'open' });
-                
-                //  Estado de la calculadora
-                this.expression = '';
-                this.resultDisplayed = false;
-                
-                //  Renderizar el HTML
-                this.render();
-                
-                //  Configurar eventos
-                this.setupEvents();
+    <tr>
+      <td><button id="btn7">7</button></td>
+      <td><button id="btn8">8</button></td>
+      <td><button id="btn9">9</button></td>
+      <td><button id="btnPlus">+</button></td>
+    </tr>
+
+    <tr>
+      <td><button id="btn4">4</button></td>
+      <td><button id="btn5">5</button></td>
+      <td><button id="btn6">6</button></td>
+      <td><button id="btnMinus">-</button></td>
+    </tr>
+
+    <tr>
+      <td><button id="btn3">3</button></td>
+      <td><button id="btn2">2</button></td>
+      <td><button id="btn1">1</button></td>
+      <td><button id="btnMultiply">*</button></td>
+    </tr>
+
+    <tr>
+      <td><button id="btn0">0</button></td>
+      <td><button id="btnDot">.</button></td>
+      <td><button id="btnResult">=</button></td>
+      <td><button id="btnDivision">/</button></td>
+    </tr>
+
+    <tr>
+      <td colspan="4">
+        <button id="btnDelete" class="btnDelete">Borrar</button>
+      </td>
+    </tr>
+  </table>
+
+  <script type="text/javascript">
+    function main() {
+      const display = document.getElementById('display');
+      const table = document.querySelector('table');
+
+      // Delegación de eventos óptima: escuchamos los clicks de toda la tabla de manera unificada
+      table.addEventListener('click', (event) => {
+        const target = event.target;
+
+        // Validamos que lo que recibió el click sea exclusivamente un elemento de tipo botón
+        if (target.tagName !== 'BUTTON') return;
+
+        const id = target.id;
+        const value = target.textContent;
+
+        if (id === 'btnDelete') {
+          // Operación de limpieza total del buffer
+          display.value = '';
+        } else if (id === 'btnResult') {
+          // Evaluación matemática del string acumulado en pantalla
+          if (display.value.trim() !== '') {
+            try {
+              // Evaluamos aritméticamente la expresión
+              const resultado = eval(display.value);
+              // Validamos divisiones por cero indeterminadas o cómputos erróneos
+              display.value = (resultado === Infinity || isNaN(resultado)) ? 'Error' : resultado;
+            } catch (error) {
+              display.value = 'Error';
             }
-            
-            // ---- 3. RENDERIZAR (CREAR EL HTML) ----
-            render() {
-                // Obtenemos el título si existe
-                const title = this.getAttribute('title') || '';
-                
-                // Este es el HTML que va DENTRO del componente
-                this.shadowRoot.innerHTML = `
-                    <style>
-                        /* ============================================
-                           ESTILOS DEL COMPONENTE (encapsulados)
-                           ============================================ */
-                        :host {
-                            display: inline-block;
-                        }
-                        
-                        .calculator {
-                            background: #2d3436;
-                            padding: 20px;
-                            border-radius: 15px;
-                            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-                            max-width: 320px;
-                            width: 100%;
-                        }
-                        
-                        /* Título (opcional) */
-                        .title {
-                            color: #dfe6e9;
-                            text-align: center;
-                            font-size: 12px;
-                            text-transform: uppercase;
-                            letter-spacing: 2px;
-                            margin-bottom: 10px;
-                            opacity: 0.6;
-                        }
-                        
-                        /* Display */
-                        #display {
-                            width: 100%;
-                            height: 60px;
-                            padding: 10px 15px;
-                            font-size: 28px;
-                            text-align: right;
-                            background: #1a1a2e;
-                            color: white;
-                            border: none;
-                            border-radius: 10px;
-                            font-family: 'Courier New', monospace;
-                            box-sizing: border-box;
-                            margin-bottom: 10px;
-                        }
-                        
-                        #display.error {
-                            background: #2d1a1a;
-                            color: #ff6b6b;
-                        }
-                        
-                        /* Tabla */
-                        table {
-                            width: 100%;
-                            border-collapse: separate;
-                            border-spacing: 6px;
-                        }
-                        
-                        td {
-                            border: none;
-                            padding: 0;
-                        }
-                        
-                        /* Botones */
-                        button {
-                            width: 100%;
-                            height: 50px;
-                            font-size: 20px;
-                            font-weight: bold;
-                            border: none;
-                            border-radius: 10px;
-                            cursor: pointer;
-                            transition: all 0.1s ease;
-                            font-family: Arial, sans-serif;
-                        }
-                        
-                        button:active {
-                            transform: scale(0.92);
-                        }
-                        
-                        /* Números */
-                        .num {
-                            background: #dfe6e9;
-                            color: #2d3436;
-                            box-shadow: 0 4px 0 #b2bec3;
-                        }
-                        
-                        .num:active {
-                            box-shadow: 0 2px 0 #b2bec3;
-                            transform: translateY(2px);
-                        }
-                        
-                        /* Operadores */
-                        .op {
-                            background: #fdcb6e;
-                            color: #2d3436;
-                            box-shadow: 0 4px 0 #e17055;
-                        }
-                        
-                        .op:active {
-                            box-shadow: 0 2px 0 #e17055;
-                            transform: translateY(2px);
-                        }
-                        
-                        /* Igual */
-                        .eq {
-                            background: #0984e3;
-                            color: white;
-                            box-shadow: 0 4px 0 #0652DD;
-                            font-size: 24px;
-                        }
-                        
-                        .eq:active {
-                            box-shadow: 0 2px 0 #0652DD;
-                            transform: translateY(2px);
-                        }
-                        
-                        /* Borrar (como en tu imagen) */
-                        #btnDelete {
-                            background: #e74c3c;
-                            color: white;
-                            font-size: 16px;
-                            font-weight: bold;
-                            text-transform: uppercase;
-                            letter-spacing: 2px;
-                            box-shadow: 0 5px 0 #BB3E22;
-                            height: 40px;
-                        }
-                        
-                        #btnDelete:active {
-                            box-shadow: 0 2px 0 #BB3E22;
-                            transform: translateY(3px);
-                        }
-                        
-                        /* Punto */
-                        .dot {
-                            background: #dfe6e9;
-                            color: #2d3436;
-                            box-shadow: 0 4px 0 #b2bec3;
-                            font-weight: 900;
-                        }
-                        
-                        .dot:active {
-                            box-shadow: 0 2px 0 #b2bec3;
-                            transform: translateY(2px);
-                        }
-                    </style>
-                    
-                    <div class="calculator">
-                        ${title ? `<div class="title">${title}</div>` : ''}
-                        
-                        <input id="display" type="text" value="0" disabled>
-                        
-                        <table>
-                            <tr>
-                                <td><button class="num" data-value="7">7</button></td>
-                                <td><button class="num" data-value="8">8</button></td>
-                                <td><button class="num" data-value="9">9</button></td>
-                                <td><button class="op" data-value="+">+</button></td>
-                            </tr>
-                            <tr>
-                                <td><button class="num" data-value="4">4</button></td>
-                                <td><button class="num" data-value="5">5</button></td>
-                                <td><button class="num" data-value="6">6</button></td>
-                                <td><button class="op" data-value="-">-</button></td>
-                            </tr>
-                            <tr>
-                                <td><button class="num" data-value="3">3</button></td>
-                                <td><button class="num" data-value="2">2</button></td>
-                                <td><button class="num" data-value="1">1</button></td>
-                                <td><button class="op" data-value="×">×</button></td>
-                            </tr>
-                            <tr>
-                                <td><button class="num" data-value="0">0</button></td>
-                                <td><button class="dot" data-value=".">.</button></td>
-                                <td><button id="btnResult" class="eq">=</button></td>
-                                <td><button class="op" data-value="÷">÷</button></td>
-                            </tr>
-                            <tr>
-                                <td colspan="4">
-                                    <button id="btnDelete">Borrar</button>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
-                `;
-            }
-            
-            // ---- 4. CONFIGURAR EVENTOS ----
-            setupEvents() {
-                // Obtener elementos del Shadow DOM
-                const display = this.shadowRoot.getElementById('display');
-                const table = this.shadowRoot.querySelector('table');
-                
-                // Delegación de eventos (un solo listener para todos los botones)
-                table.addEventListener('click', (e) => {
-                    const btn = e.target.closest('button');
-                    if (!btn) return;
-                    
-                    const value = btn.dataset.value;
-                    
-                    // Identificar qué botón se presionó
-                    if (btn.id === 'btnResult') {
-                        this.calculate();
-                    } else if (btn.id === 'btnDelete') {
-                        this.clear();
-                    } else if (value !== undefined) {
-                        this.addValue(value);
-                    }
-                });
-                
-                // Teclado
-                document.addEventListener('keydown', (e) => {
-                    this.handleKeyboard(e);
-                });
-            }
-            
-            // ---- 5. MÉTODOS DE LA CALCULADORA ----
-            
-            // Agregar un valor (número, operador, punto)
-            addValue(value) {
-                const display = this.shadowRoot.getElementById('display');
-                
-                // Si ya se mostró un resultado y presionamos un número,
-                // empezamos de nuevo
-                if (this.resultDisplayed && !isNaN(value)) {
-                    this.expression = '';
-                    this.resultDisplayed = false;
-                }
-                
-                // Limpiar error
-                display.classList.remove('error');
-                
-                // Prevenir operadores seguidos
-                const lastChar = this.expression.slice(-1);
-                const ops = ['+', '-', '×', '÷'];
-                
-                if (ops.includes(lastChar) && ops.includes(value)) {
-                    // Reemplazar el último operador
-                    this.expression = this.expression.slice(0, -1) + value;
-                } else {
-                    this.expression += value;
-                }
-                
-                this.updateDisplay();
-            }
-            
-            // Calcular el resultado
-            calculate() {
-                const display = this.shadowRoot.getElementById('display');
-                
-                if (!this.expression) {
-                    display.value = '0';
-                    return;
-                }
-                
-                try {
-                    // Reemplazar símbolos visuales
-                    let expr = this.expression
-                        .replace(/×/g, '*')
-                        .replace(/÷/g, '/');
-                    
-                    // Evaluar de forma segura
-                    const result = new Function(`return (${expr})`)();
-                    
-                    if (!isFinite(result)) {
-                        throw new Error('Error');
-                    }
-                    
-                    // Formatear resultado
-                    const formatted = Number.isInteger(result) 
-                        ? result.toString() 
-                        : result.toFixed(6).replace(/\.?0+$/, '');
-                    
-                    display.value = formatted;
-                    this.expression = formatted;
-                    this.resultDisplayed = true;
-                    display.classList.remove('error');
-                    
-                } catch (error) {
-                    display.value = 'Error';
-                    display.classList.add('error');
-                    this.expression = '';
-                    this.resultDisplayed = false;
-                    
-                    // Limpiar error después de 1.5 segundos
-                    setTimeout(() => {
-                        display.classList.remove('error');
-                        if (display.value === 'Error') {
-                            display.value = '0';
-                        }
-                    }, 1500);
-                }
-            }
-            
-            // Borrar todo
-            clear() {
-                this.expression = '';
-                this.resultDisplayed = false;
-                const display = this.shadowRoot.getElementById('display');
-                display.classList.remove('error');
-                this.updateDisplay();
-            }
-            
-            // Actualizar el display
-            updateDisplay() {
-                const display = this.shadowRoot.getElementById('display');
-                display.value = this.expression || '0';
-            }
-            
-            // ---- 6. TECLADO ----
-            handleKeyboard(e) {
-                const key = e.key;
-                
-                // Prevenir comportamiento por defecto
-                if (['0','1','2','3','4','5','6','7','8','9','.','+','-','*','/','Enter','Backspace','Delete'].includes(key)) {
-                    e.preventDefault();
-                }
-                
-                switch(key) {
-                    case '0': case '1': case '2': case '3': case '4':
-                    case '5': case '6': case '7': case '8': case '9':
-                        this.addValue(key);
-                        break;
-                    case '.': this.addValue('.'); break;
-                    case '+': this.addValue('+'); break;
-                    case '-': this.addValue('-'); break;
-                    case '*': this.addValue('×'); break;
-                    case '/': this.addValue('÷'); break;
-                    case 'Enter': this.calculate(); break;
-                    case 'Backspace':
-                        this.expression = this.expression.slice(0, -1);
-                        this.updateDisplay();
-                        break;
-                    case 'Delete':
-                        this.clear();
-                        break;
-                }
-            }
-            
-            // ---- 7. MÉTODO PÚBLICO (opcional) ----
-            reset() {
-                this.clear();
-                console.log(' Calculadora reseteada');
-            }
-            
-            // ---- 8. CICLO DE VIDA ----
-            connectedCallback() {
-                console.log(' Calculadora conectada al DOM');
-                this.updateDisplay();
-            }
+          }
+        } else {
+          // Si la pantalla muestra un error previo, limpiamos antes de concatenar un nuevo carácter
+          if (display.value === 'Error') {
+            display.value = '';
+          }
+          // Concatenamos el valor del botón numérico u operador presionado
+          display.value += value;
         }
-        
-        // ---- 9. REGISTRAR EL COMPONENTE ----
-        customElements.define('x-calculator', SimpleCalculator);
-        
-        // ---- 10. EJEMPLO DE USO DESDE CONSOLA ----
-        console.log(' Puedes usar:');
-        console.log('  document.querySelector("x-calculator").reset()');
-        console.log('  document.querySelectorAll("x-calculator") para ver todas');
-    </script>
+      });
+    }
+
+    // Inicialización del proceso principal una vez que la ventana carga la estructura
+    window.onload = main;
+  </script>
 </body>
 </html>

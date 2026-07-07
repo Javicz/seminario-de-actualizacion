@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Calculadora - Web Component</title>
+  <style>
+    /* Estilos globales de presentación y centrado */
+    body {
+      background-color: #f1f5f9;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    /* Estilos aplicados directamente a la etiqueta de nuestro componente personalizado */
+    custom-calculator {
+      display: block;
+      background-color: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      padding: 15px;
+      width: 280px;
+    }
+
+    table {
+      border-collapse: separate;
+      border-spacing: 10px;
+      width: 100%;
+    }
+
+    td {
+      border: none;
+      padding: 0;
+    }
+
+    /* Pantalla de visualización (Input) */
+    .calc-display {
+      width: 100%;
+      height: 50px;
+      background-color: #f8fafc;
+      border: 2px solid #e2e8f0;
+      border-radius: 6px;
+      box-sizing: border-box;
+      padding: 0 10px;
+      font-size: 22px;
+      text-align: right;
+      color: #1e293b;
+      font-weight: bold;
+    }
+
+    /* Botones de la interfaz */
+    .calc-btn {
+      width: 100%;
+      height: 45px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #334155;
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.1s ease;
+    }
+
+    .calc-btn:hover {
+      background-color: #e2e8f0;
+    }
+
+    /* Botón de borrado con las especificaciones de la cátedra */
+    .btnDelete {
+      color: white;
+      font-family: arial;
+      font-weight: bold;
+      font-size: 85%;
+      background-color: red;
+      box-shadow: 0px 4px #BB3E22;
+      width: 100%;
+      height: 40px;
+      border-radius: 6px;
+      border-color: #BB3E22;
+      border-style: solid;
+      border-width: 1px;
+      cursor: pointer;
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+    }
+
+    .btnDelete:hover {
+      background-color: #e63946;
+    }
+
+    .btnDelete:active {
+      box-shadow: 0px 1px #BB3E22;
+      transform: translateY(3px);
+    }
+  </style>
+</head>
+
+<body>
+
+  <script type="text/javascript">
+
+    class CustomCalculator extends HTMLElement {
+      constructor() {
+        // Invoca obligatoriamente al constructor de la clase base HTMLElement
+        super();
+
+        // 1. Definición y creación de los miembros del elemento
+        this.table = document.createElement('table');
+        this.display = document.createElement('input');
+
+        // Configuración inicial de la pantalla
+        this.display.type = 'text';
+        this.display.className = 'calc-display';
+        this.display.disabled = true;
+
+        // 2. Construcción de la matriz estructural de la calculadora empleando los recursos solicitados
+        this.buildStructure();
+
+        // 3. Inserción del nodo raíz al árbol del componente
+        this.appendChild(this.table);
+      }
+
+      buildStructure() {
+        // Fila 0: Display
+        const rowDisplay = document.createElement('tr');
+        const tdDisplay = document.createElement('td');
+        tdDisplay.colSpan = 4;
+        tdDisplay.appendChild(this.display);
+        rowDisplay.appendChild(tdDisplay);
+        this.table.appendChild(rowDisplay);
+
+        // Definición matricial de los botones para evitar duplicación de código imperativo
+        const layout = [
+          [['7', 'btn7'], ['8', 'btn8'], ['9', 'btn9'], ['+', 'btnPlus']],
+          [['4', 'btn4'], ['5', 'btn5'], ['6', 'btn6'], ['-', 'btnMinus']],
+          [['3', 'btn3'], ['2', 'btn2'], ['1', 'btn1'], ['*', 'btnMultiply']],
+          [['0', 'btn0'], ['.', 'btnDot'], ['=', 'btnResult'], ['/', 'btnDivision']]
+        ];
+
+        layout.forEach(rowData => {
+          const row = document.createElement('tr');
+          rowData.forEach(([text, id]) => {
+            const td = document.createElement('td');
+            const btn = document.createElement('button');
+            btn.id = id;
+            btn.className = 'calc-btn';
+            btn.textContent = text;
+            td.appendChild(btn);
+            row.appendChild(td);
+          });
+          this.table.appendChild(row);
+        });
+
+        // Fila Última: Botón de Borrado
+        const rowDelete = document.createElement('tr');
+        const tdDelete = document.createElement('td');
+        tdDelete.colSpan = 4;
+        
+        const btnDelete = document.createElement('button');
+        btnDelete.id = 'btnDelete';
+        btnDelete.className = 'btnDelete';
+        btnDelete.textContent = 'Borrar';
+        
+        tdDelete.appendChild(btnDelete);
+        rowDelete.appendChild(tdDelete);
+        this.table.appendChild(rowDelete);
+      }
+
+      // Manejador centralizado para procesar los clics mediante delegación
+      handleButtonClick(event) {
+        const target = event.target;
+        if (target.tagName !== 'BUTTON') return;
+
+        const id = target.id;
+        const value = target.textContent;
+
+        if (id === 'btnDelete') {
+          this.display.value = '';
+        } else if (id === 'btnResult') {
+          if (this.display.value.trim() !== '') {
+            try {
+              const resultado = eval(this.display.value);
+              if (resultado === Infinity || isNaN(resultado)) {
+                this.display.value = 'Error';
+              } else {
+                this.display.value = resultado;
+              }
+            } catch (error) {
+              this.display.value = 'Error';
+            }
+          }
+        } else {
+          if (this.display.value === 'Error') {
+            this.display.value = '';
+          }
+          this.display.value += value;
+        }
+      }
+
+      // Ciclo de vida: Inserción en el DOM
+      connectedCallback() {
+        console.log('Calculadora agregada al DOM');
+        
+        // Conservamos la referencia léxica de la clase en el escuchador
+        this._listener = this.handleButtonClick.bind(this);
+        this.table.addEventListener('click', this._listener);
+      }
+
+      // Ciclo de vida: Eliminación del DOM
+      disconnectedCallback() {
+        console.log('Calculadora removida del DOM');
+        this.table.removeEventListener('click', this._listener);
+      }
+    }
+
+    // Registro del nuevo elemento personalizado en el motor del navegador
+    customElements.define('custom-calculator', CustomCalculator);
+
+    // Función principal de arranque
+    function main() {
+      // Instanciación dinámica basada en la abstracción orientada a objetos de la plantilla
+      const myCalculator = new CustomCalculator();
+      document.body.appendChild(myCalculator);
+    }
+
+    window.onload = main;
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TP 1 - Ejercicio 6: Datos Meteorológicos</title>
+  
+  <script src="WeatherData.js" defer></script>
+</head>
+<body style="background-color: #f0f4f8; margin: 0; padding: 40px; font-family: sans-serif;">
+
+  <div style="text-align: center; margin-bottom: 20px;">
+    <h1 style="color: #334155; font-size: 24px;">Demostración de WebComponent Meteorológico</h1>
+  </div>
+
+  <weather-data id="climaMDQ"></weather-data>
+
+  <script>
+    // Aseguramos la ejecución una vez que el DOM está listo
+    window.addEventListener('DOMContentLoaded', () => {
+      const component = document.getElementById('climaMDQ');
+
+      // 1. Invocar el método requerido para calcular promedios de todas las temperaturas
+      console.log("%c--- EJERCICIO 6: RESULTADO DEL MÉTODO SOLICITADO ---", "color: #0284c7; font-weight: bold; font-size: 13px;");
+      
+      const promediosTermicos = component.getTemperaturesAverage();
+      console.dir(promediosTermicos);
+
+      // 2. Comprobación del funcionamiento de getData()
+      console.log("%c\n--- DATOS INTERNOS (getData) ---", "color: #16a34a; font-weight: bold;");
+      console.log(component.getData());
+    });
+  </script>
+
+</body>
+</html>
