@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat WebComponent</title>
+  <script src="ChatComponent.js" defer></script>
+</head>
+<body style="background: #f1f5f9; margin: 0; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+
+  <div style="width: 100%; max-width: 800px;">
+    <h1 style="color: #1e293b; font-family: -apple-system, sans-serif; text-align: center; font-weight: 300; letter-spacing: 1px;">
+      📱 WebComponent de Chat
+    </h1>
+    <p style="color: #64748b; text-align: center; font-family: -apple-system, sans-serif; margin-bottom: 30px;">
+      Abstracción de interfaz de chat con métodos para insertar mensajes
+    </p>
+    
+    <chat-component></chat-component>
+    
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+      <h3 style="color: #334155; font-family: -apple-system, sans-serif; margin-top: 0;">🔧 Uso programático</h3>
+      <p style="color: #64748b; font-family: -apple-system, sans-serif; font-size: 14px;">
+        Puedes usar el método <code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px;">addMessage(texto, esPropio, hora)</code> para insertar mensajes desde JavaScript:
+      </p>
+      <pre style="background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px;">
+// Obtener referencia al componente
+const chat = document.querySelector('chat-component');
+
+// Agregar mensaje propio
+chat.addMessage('¡Hola desde JavaScript!', true, '14:30');
+
+// Agregar mensaje de otro
+chat.addMessage('¡Hola! ¿Cómo estás?', false, '14:31');
+
+// Limpiar todos los mensajes
+chat.clearMessages();
+
+// Obtener historial de mensajes
+const historial = chat.getMessages();
+console.log(historial);</pre>
+      
+      <div style="display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;">
+        <button onclick="agregarMensajePropio()" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+          Agregar mensaje propio
+        </button>
+        <button onclick="agregarMensajeOtro()" style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+          Agregar mensaje de otro
+        </button>
+        <button onclick="limpiarChat()" style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+          Limpiar todo
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Funciones globales para demostración
+    function agregarMensajePropio() {
+      var chat = document.querySelector('chat-component');
+      var mensajes = [
+        '¡Hola! Esto es un mensaje programático',
+        'Me encanta este WebComponent',
+        '¿Cómo se usa?',
+        '¡Muy fácil!'
+      ];
+      var randomMsg = mensajes[Math.floor(Math.random() * mensajes.length)];
+      chat.addMessage(randomMsg, true);
+    }
+
+    function agregarMensajeOtro() {
+      var chat = document.querySelector('chat-component');
+      var mensajes = [
+        '¡Qué interesante!',
+        'Me gusta la interfaz',
+        '¿Puedo personalizar los avatares?',
+        '¡Sí, solo cambia la configuración!'
+      ];
+      var randomMsg = mensajes[Math.floor(Math.random() * mensajes.length)];
+      chat.addMessage(randomMsg, false);
+    }
+
+    function limpiarChat() {
+      var chat = document.querySelector('chat-component');
+      chat.clearMessages();
+    }
+
+    // Mensaje de bienvenida después de 2 segundos
+    setTimeout(function() {
+      var chat = document.querySelector('chat-component');
+      chat.addMessage('¡Bienvenido al chat! 💬', false, '00:00');
+    }, 1000);
+  </script>
+
+</body>
+</html>
