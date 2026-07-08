@@ -18,51 +18,11 @@ class AfipInvoiceForm extends HTMLElement {
       condicionIVA: 'IVA Sujeto Exento',
       condicionVenta: 'Cuenta Corriente',
       items: [
-        { 
-          codigo: 'UGL 6- CAPITA SALUD MENTAL PERIODO 06/16', 
-          cantidad: '1,00', 
-          unidad: 'otras unidades', 
-          precio: '264002,11', 
-          bonif: '0,00', 
-          impBonif: '0,00', 
-          subtotal: '264002,11' 
-        },
-        { 
-          codigo: 'AJUSTE COMPLEMENTARIO -02/16', 
-          cantidad: '1,00', 
-          unidad: 'otras unidades', 
-          precio: '8016,22', 
-          bonif: '0,00', 
-          impBonif: '0,00', 
-          subtotal: '8016,22' 
-        },
-        { 
-          codigo: 'AJUSTE COMPLEMENTARIO -03/16', 
-          cantidad: '1,00', 
-          unidad: 'otras unidades', 
-          precio: '7575,66', 
-          bonif: '0,00', 
-          impBonif: '0,00', 
-          subtotal: '7575,66' 
-        },
-        { 
-          codigo: 'AJUSTE COMPLEMENTARIO -04/16', 
-          cantidad: '1,00', 
-          unidad: 'otras unidades', 
-          precio: '28457,23', 
-          bonif: '0,00', 
-          impBonif: '0,00', 
-          subtotal: '28457,23' 
-        },
-        { 
-          codigo: 'AJUSTE COMPLEMENTARIO -05/16', 
-          cantidad: '1,00', 
-          unidad: 'otras unidades', 
-          precio: '28531,94', 
-          bonif: '0,00', 
-          impBonif: '0,00', 
-          subtotal: '28531,94' 
-        }
+        { codigo: 'UGL 6- CAPITA SALUD MENTAL PERIODO 06/16', cantidad: '1,00', unidad: 'otras unidades', precio: '264002,11', bonif: '0,00', impBonif: '0,00', subtotal: '264002,11' },
+        { codigo: 'AJUSTE COMPLEMENTARIO -02/16', cantidad: '1,00', unidad: 'otras unidades', precio: '8016,22', bonif: '0,00', impBonif: '0,00', subtotal: '8016,22' },
+        { codigo: 'AJUSTE COMPLEMENTARIO -03/16', cantidad: '1,00', unidad: 'otras unidades', precio: '7575,66', bonif: '0,00', impBonif: '0,00', subtotal: '7575,66' },
+        { codigo: 'AJUSTE COMPLEMENTARIO -04/16', cantidad: '1,00', unidad: 'otras unidades', precio: '28457,23', bonif: '0,00', impBonif: '0,00', subtotal: '28457,23' },
+        { codigo: 'AJUSTE COMPLEMENTARIO -05/16', cantidad: '1,00', unidad: 'otras unidades', precio: '28531,94', bonif: '0,00', impBonif: '0,00', subtotal: '28531,94' }
       ],
       subtotal: '336583,16',
       otrosTributos: '0,00',
@@ -81,7 +41,7 @@ class AfipInvoiceForm extends HTMLElement {
     this.handleExportDirectPDF = this.handleExportDirectPDF.bind(this);
     this.loadHtml2PdfLibrary = this.loadHtml2PdfLibrary.bind(this);
     this.getFormData = this.getFormData.bind(this);
-    this.setFormData = this.setFormData.bind(this);
+    this.getFullInvoiceHTML = this.getFullInvoiceHTML.bind(this);
   }
 
   connectedCallback() {
@@ -104,13 +64,6 @@ class AfipInvoiceForm extends HTMLElement {
     
     formData.items = this._currentItems;
     return formData;
-  }
-
-  setFormData(data) {
-    this._invoiceData = JSON.parse(JSON.stringify(data));
-    this._currentItems = JSON.parse(JSON.stringify(data.items || []));
-    this.render();
-    this.renderItems();
   }
 
   handleAddItem() {
@@ -325,138 +278,14 @@ class AfipInvoiceForm extends HTMLElement {
     script.onload = callback;
     script.onerror = function() {
       console.error('Error al cargar html2pdf.js');
-      alert('No se pudo cargar la librería para exportar PDF. Verifique su conexión a internet.');
+      alert('No se pudo cargar la librería para exportar PDF. Verifique su conexión.');
     };
     document.head.appendChild(script);
   }
 
-  // === MÉTODO CORREGIDO PARA EXPORTAR PDF ===
-  handleExportDirectPDF() {
-    var btn = this.shadowRoot.querySelector('#pdf-direct-btn');
-    var originalText = '📄 PDF Directo';
-    if (btn) {
-      btn.textContent = '⏳ Generando...';
-      btn.disabled = true;
-    }
-    
-    this.loadHtml2PdfLibrary(function() {
-      try {
-        var formData = this.getFormData();
-        
-        // Actualizar totales
-        var total = 0;
-        for (var i = 0; i < formData.items.length; i++) {
-          var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
-          total += subtotal;
-        }
-        formData.subtotal = total.toFixed(2).replace('.', ',');
-        formData.total = total.toFixed(2).replace('.', ',');
-        
-        // Crear contenedor temporal
-        var tempContainer = document.createElement('div');
-        tempContainer.style.position = 'fixed';
-        tempContainer.style.left = '0';
-        tempContainer.style.top = '0';
-        tempContainer.style.width = '100%';
-        tempContainer.style.height = '100%';
-        tempContainer.style.background = 'white';
-        tempContainer.style.zIndex = '9999';
-        tempContainer.style.overflow = 'auto';
-        tempContainer.style.padding = '40px';
-        tempContainer.style.display = 'flex';
-        tempContainer.style.justifyContent = 'center';
-        tempContainer.style.alignItems = 'center';
-        
-        var invoiceHTML = this.buildInvoiceHTML(formData);
-        tempContainer.innerHTML = invoiceHTML;
-        document.body.appendChild(tempContainer);
-        
-        // Buscar el elemento de la factura
-        var invoiceElement = tempContainer.querySelector('.invoice');
-        if (!invoiceElement) {
-          console.error('No se encontró el elemento de la factura.');
-          document.body.removeChild(tempContainer);
-          if (btn) {
-            btn.textContent = originalText;
-            btn.disabled = false;
-          }
-          return;
-        }
-        
-        // Esperar a que los estilos se apliquen
-        var self = this;
-        var btnRef = btn;
-        var origText = originalText;
-        
-        // Usar requestAnimationFrame para asegurar que el DOM esté renderizado
-        requestAnimationFrame(function() {
-          setTimeout(function() {
-            // Configurar opciones mejoradas
-            var opt = {
-              margin: [10, 10, 10, 10],
-              filename: 'Factura_AFIP_' + (formData.comprobanteNro || '00000000') + '.pdf',
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { 
-                scale: 2, 
-                useCORS: true, 
-                logging: true,
-                width: invoiceElement.scrollWidth,
-                height: invoiceElement.scrollHeight,
-                windowWidth: invoiceElement.scrollWidth,
-                windowHeight: invoiceElement.scrollHeight
-              },
-              jsPDF: { 
-                unit: 'mm', 
-                format: 'a4', 
-                orientation: 'portrait' 
-              },
-              pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-            };
-            
-            // Usar html2pdf con promesa
-            html2pdf()
-              .set(opt)
-              .from(invoiceElement)
-              .save()
-              .then(function() {
-                // Limpiar contenedor temporal
-                if (tempContainer.parentNode) {
-                  document.body.removeChild(tempContainer);
-                }
-                if (btnRef) {
-                  btnRef.textContent = origText;
-                  btnRef.disabled = false;
-                }
-                console.log('PDF generado con éxito.');
-              })
-              .catch(function(error) {
-                console.error('Error al generar PDF:', error);
-                alert('Ocurrió un error al generar el PDF. Por favor, intente de nuevo.');
-                if (tempContainer.parentNode) {
-                  document.body.removeChild(tempContainer);
-                }
-                if (btnRef) {
-                  btnRef.textContent = origText;
-                  btnRef.disabled = false;
-                }
-              });
-          }, 500);
-        });
-        
-      } catch (error) {
-        console.error('Error en la exportación:', error);
-        alert('Error al preparar la factura para PDF.');
-        if (btn) {
-          btn.textContent = originalText;
-          btn.disabled = false;
-        }
-      }
-    }.bind(this));
-  }
-
   generateInvoice() {
     var formData = this.getFormData();
-    
+
     var total = 0;
     for (var i = 0; i < formData.items.length; i++) {
       var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
@@ -464,20 +293,24 @@ class AfipInvoiceForm extends HTMLElement {
     }
     formData.subtotal = total.toFixed(2).replace('.', ',');
     formData.total = total.toFixed(2).replace('.', ',');
-    
-    var win = window.open('', '_blank', 'width=1100,height=800');
+
+    var fullHTML = this.getFullInvoiceHTML(formData);
+    var invoiceBlob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+    var invoiceUrl = URL.createObjectURL(invoiceBlob);
+
+    var win = window.open(invoiceUrl, '_blank', 'width=1100,height=800');
     if (!win) {
+      URL.revokeObjectURL(invoiceUrl);
       alert('Por favor, permita las ventanas emergentes para ver la factura');
       return;
     }
-    
-    var invoiceHTML = this.buildInvoiceHTML(formData);
-    win.document.write(invoiceHTML);
-    win.document.close();
-    win.focus();
+
+    win.addEventListener('load', function() {
+      win.focus();
+    }, { once: true });
   }
 
-  buildInvoiceHTML(data) {
+  getFullInvoiceHTML(data) {
     var itemsRows = '';
     var totalFactura = 0;
     
@@ -507,11 +340,7 @@ class AfipInvoiceForm extends HTMLElement {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Factura AFIP - ${data.comprobanteNro || '00000000'}</title>
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
           body {
             font-family: 'Courier New', Courier, monospace;
             background: #f5f5f5;
@@ -552,9 +381,7 @@ class AfipInvoiceForm extends HTMLElement {
             font-size: 14px;
             line-height: 1.8;
           }
-          .header-right strong {
-            color: #1a1a1a;
-          }
+          .header-right strong { color: #1a1a1a; }
           .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -565,13 +392,8 @@ class AfipInvoiceForm extends HTMLElement {
             border: 1px solid #ddd;
             font-size: 14px;
           }
-          .info-grid .label {
-            font-weight: bold;
-            color: #555;
-          }
-          .info-grid .value {
-            color: #1a1a1a;
-          }
+          .info-grid .label { font-weight: bold; color: #555; }
+          .info-grid .value { color: #1a1a1a; }
           table {
             width: 100%;
             border-collapse: collapse;
@@ -585,13 +407,7 @@ class AfipInvoiceForm extends HTMLElement {
             text-align: left;
             font-weight: normal;
           }
-          td {
-            padding: 8px;
-            border-bottom: 1px solid #ddd;
-          }
-          tr:hover {
-            background: #f9f9f9;
-          }
+          td { padding: 8px; border-bottom: 1px solid #ddd; }
           .totals {
             margin-top: 20px;
             border-top: 2px solid #333;
@@ -599,9 +415,7 @@ class AfipInvoiceForm extends HTMLElement {
             text-align: right;
             font-size: 16px;
           }
-          .totals div {
-            margin: 5px 0;
-          }
+          .totals div { margin: 5px 0; }
           .totals .total {
             font-size: 20px;
             font-weight: bold;
@@ -659,37 +473,16 @@ class AfipInvoiceForm extends HTMLElement {
           </div>
           
           <div class="info-grid">
-            <div>
-              <span class="label">Periodo Facturado Desde:</span>
-              <span class="value">${data.periodoDesde || ''}</span>
-            </div>
-            <div>
-              <span class="label">Hasta:</span>
-              <span class="value">${data.periodoHasta || ''}</span>
-            </div>
-            <div>
-              <span class="label">Fecha de Vto. para el pago:</span>
-              <span class="value">${data.fechaVtoPago || ''}</span>
-            </div>
+            <div><span class="label">Periodo Facturado Desde:</span> <span class="value">${data.periodoDesde || ''}</span></div>
+            <div><span class="label">Hasta:</span> <span class="value">${data.periodoHasta || ''}</span></div>
+            <div><span class="label">Fecha de Vto. para el pago:</span> <span class="value">${data.fechaVtoPago || ''}</span></div>
           </div>
           
           <div class="info-grid" style="margin-top: 0;">
-            <div style="grid-column: 1 / -1;">
-              <span class="label">CUIT:</span>
-              <span class="value">${data.cuitCliente || ''}</span>
-            </div>
-            <div style="grid-column: 1 / -1;">
-              <span class="label">Apellido y Nombre / Razón Social:</span>
-              <span class="value">${data.razonSocial || ''}</span>
-            </div>
-            <div>
-              <span class="label">Condición frente al IVA:</span>
-              <span class="value">${data.condicionIVA || ''}</span>
-            </div>
-            <div>
-              <span class="label">Condición de venta:</span>
-              <span class="value">${data.condicionVenta || ''}</span>
-            </div>
+            <div style="grid-column: 1 / -1;"><span class="label">CUIT:</span> <span class="value">${data.cuitCliente || ''}</span></div>
+            <div style="grid-column: 1 / -1;"><span class="label">Apellido y Nombre / Razón Social:</span> <span class="value">${data.razonSocial || ''}</span></div>
+            <div><span class="label">Condición frente al IVA:</span> <span class="value">${data.condicionIVA || ''}</span></div>
+            <div><span class="label">Condición de venta:</span> <span class="value">${data.condicionVenta || ''}</span></div>
           </div>
           
           <table>
@@ -704,9 +497,7 @@ class AfipInvoiceForm extends HTMLElement {
                 <th style="padding:10px 8px;text-align:right;">Subtotal</th>
               </tr>
             </thead>
-            <tbody>
-              ${itemsRows}
-            </tbody>
+            <tbody>${itemsRows}</tbody>
           </table>
           
           <div class="totals">
@@ -728,6 +519,108 @@ class AfipInvoiceForm extends HTMLElement {
       </body>
       </html>
     `;
+  }
+
+  // === EXPORTAR PDF DIRECTO ===
+  handleExportDirectPDF() {
+    var btn = this.shadowRoot.querySelector('#pdf-direct-btn');
+    var originalText = '📄 PDF Directo';
+
+    if (btn) {
+      btn.textContent = '⏳ Generando PDF...';
+      btn.disabled = true;
+    }
+
+    var self = this;
+
+    this.loadHtml2PdfLibrary(function() {
+      try {
+        var formData = self.getFormData();
+
+        var total = 0;
+        for (var i = 0; i < formData.items.length; i++) {
+          var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
+          total += subtotal;
+        }
+        formData.subtotal = total.toFixed(2).replace('.', ',');
+        formData.total = total.toFixed(2).replace('.', ',');
+
+        var fullHTML = self.getFullInvoiceHTML(formData);
+        var iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.left = '-9999px';
+        iframe.style.top = '0';
+        iframe.style.width = '1100px';
+        iframe.style.height = '900px';
+        iframe.style.border = '0';
+        iframe.style.zIndex = '2147483647';
+        document.body.appendChild(iframe);
+
+        function cleanup() {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe);
+          }
+          if (btn) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }
+        }
+
+        iframe.onload = function() {
+          try {
+            var doc = iframe.contentDocument || iframe.contentWindow.document;
+            var invoiceNode = doc.querySelector('.invoice');
+
+            if (!invoiceNode) {
+              throw new Error('No se encontró el contenido de la factura');
+            }
+
+            html2pdf()
+              .set({
+                margin: [10, 10, 10, 10],
+                filename: 'Factura_AFIP_' + (formData.comprobanteNro || '00000000') + '.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                  scale: 2,
+                  useCORS: true,
+                  logging: false,
+                  scrollX: 0,
+                  scrollY: 0
+                },
+                jsPDF: {
+                  unit: 'mm',
+                  format: 'a4',
+                  orientation: 'portrait'
+                }
+              })
+              .from(invoiceNode)
+              .save()
+              .then(function() {
+                cleanup();
+                console.log('PDF generado y descargado con éxito.');
+              })
+              .catch(function(error) {
+                console.error('Error al generar PDF:', error);
+                alert('Error al generar el PDF. Por favor, intente de nuevo.');
+                cleanup();
+              });
+          } catch (error) {
+            console.error('Error en la exportación:', error);
+            alert('Error al preparar la factura para PDF.');
+            cleanup();
+          }
+        };
+
+        iframe.srcdoc = fullHTML;
+      } catch (error) {
+        console.error('Error en la exportación:', error);
+        alert('Error al preparar la factura para PDF.');
+        if (btn) {
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+      }
+    });
   }
 
   handleSubmit(event) {
@@ -1045,15 +938,12 @@ class AfipInvoiceForm extends HTMLElement {
     // SECCIÓN ENCABEZADO
     var section1 = document.createElement('div');
     section1.className = 'form-section';
-    
     var sectionTitle1 = document.createElement('h3');
     var st1Text = document.createTextNode('📋 Encabezado');
     sectionTitle1.appendChild(st1Text);
     section1.appendChild(sectionTitle1);
-    
     var grid1 = document.createElement('div');
     grid1.className = 'form-grid';
-    
     var fields1 = [
       { name: 'puntoVenta', label: 'Punto de Venta', value: this._invoiceData.puntoVenta },
       { name: 'comprobanteNro', label: 'Comp. Nro', value: this._invoiceData.comprobanteNro },
@@ -1062,85 +952,69 @@ class AfipInvoiceForm extends HTMLElement {
       { name: 'ingresosBrutos', label: 'Ingresos Brutos', value: this._invoiceData.ingresosBrutos },
       { name: 'fechaInicio', label: 'Inicio Actividades', value: this._invoiceData.fechaInicio }
     ];
-    
     for (var i = 0; i < fields1.length; i++) {
       var field = this.createField(fields1[i].name, fields1[i].label, fields1[i].value);
       grid1.appendChild(field);
     }
-    
     section1.appendChild(grid1);
     body.appendChild(section1);
     
     // SECCIÓN PERIODO
     var section2 = document.createElement('div');
     section2.className = 'form-section';
-    
     var sectionTitle2 = document.createElement('h3');
     var st2Text = document.createTextNode('📅 Periodo');
     sectionTitle2.appendChild(st2Text);
     section2.appendChild(sectionTitle2);
-    
     var grid2 = document.createElement('div');
     grid2.className = 'form-grid';
-    
     var fields2 = [
       { name: 'periodoDesde', label: 'Desde', value: this._invoiceData.periodoDesde },
       { name: 'periodoHasta', label: 'Hasta', value: this._invoiceData.periodoHasta },
       { name: 'fechaVtoPago', label: 'Fecha Vto. Pago', value: this._invoiceData.fechaVtoPago }
     ];
-    
     for (var j = 0; j < fields2.length; j++) {
       var field2 = this.createField(fields2[j].name, fields2[j].label, fields2[j].value);
       grid2.appendChild(field2);
     }
-    
     section2.appendChild(grid2);
     body.appendChild(section2);
     
     // SECCIÓN CLIENTE
     var section3 = document.createElement('div');
     section3.className = 'form-section';
-    
     var sectionTitle3 = document.createElement('h3');
     var st3Text = document.createTextNode('👤 Cliente');
     sectionTitle3.appendChild(st3Text);
     section3.appendChild(sectionTitle3);
-    
     var grid3 = document.createElement('div');
     grid3.className = 'form-grid';
-    
     var fields3 = [
       { name: 'cuitCliente', label: 'CUIT Cliente', value: this._invoiceData.cuitCliente },
       { name: 'razonSocial', label: 'Razón Social', value: this._invoiceData.razonSocial, full: true },
       { name: 'condicionIVA', label: 'Condición IVA', value: this._invoiceData.condicionIVA },
       { name: 'condicionVenta', label: 'Condición Venta', value: this._invoiceData.condicionVenta }
     ];
-    
     for (var k = 0; k < fields3.length; k++) {
       var field3 = this.createField(fields3[k].name, fields3[k].label, fields3[k].value, fields3[k].full);
       grid3.appendChild(field3);
     }
-    
     section3.appendChild(grid3);
     body.appendChild(section3);
     
     // SECCIÓN ITEMS
     var section4 = document.createElement('div');
     section4.className = 'form-section';
-    
     var sectionTitle4 = document.createElement('h3');
     var st4Text = document.createTextNode('📦 Productos/Servicios');
     sectionTitle4.appendChild(st4Text);
     section4.appendChild(sectionTitle4);
-    
     var itemsHeader = document.createElement('div');
     itemsHeader.className = 'items-header';
-    
     var itemsLabel = document.createElement('h4');
     var ilText = document.createTextNode('Items de la factura');
     itemsLabel.appendChild(ilText);
     itemsHeader.appendChild(itemsLabel);
-    
     var addBtn = document.createElement('button');
     addBtn.type = 'button';
     addBtn.className = 'btn-add-item';
@@ -1148,68 +1022,55 @@ class AfipInvoiceForm extends HTMLElement {
     addBtn.appendChild(addText);
     addBtn.addEventListener('click', this.handleAddItem);
     itemsHeader.appendChild(addBtn);
-    
     section4.appendChild(itemsHeader);
-    
     var itemsContainer = document.createElement('div');
     itemsContainer.id = 'items-container';
     section4.appendChild(itemsContainer);
-    
     body.appendChild(section4);
     
     // SECCIÓN TOTALES
     var section5 = document.createElement('div');
     section5.className = 'form-section';
-    
     var sectionTitle5 = document.createElement('h3');
     var st5Text = document.createTextNode('💰 Totales');
     sectionTitle5.appendChild(st5Text);
     section5.appendChild(sectionTitle5);
-    
     var grid5 = document.createElement('div');
     grid5.className = 'form-grid';
-    
     var fields5 = [
       { name: 'subtotal', label: 'Subtotal', value: this._invoiceData.subtotal },
       { name: 'otrosTributos', label: 'Otros Tributos', value: this._invoiceData.otrosTributos },
       { name: 'total', label: 'Total', value: this._invoiceData.total }
     ];
-    
     for (var l = 0; l < fields5.length; l++) {
       var field5 = this.createField(fields5[l].name, fields5[l].label, fields5[l].value);
       grid5.appendChild(field5);
     }
-    
     section5.appendChild(grid5);
     body.appendChild(section5);
     
     // SECCIÓN CAE
     var section6 = document.createElement('div');
     section6.className = 'form-section';
-    
     var sectionTitle6 = document.createElement('h3');
     var st6Text = document.createTextNode('🔐 CAE');
     sectionTitle6.appendChild(st6Text);
     section6.appendChild(sectionTitle6);
-    
     var grid6 = document.createElement('div');
     grid6.className = 'form-grid';
-    
     var fields6 = [
       { name: 'caeNro', label: 'CAE Nº', value: this._invoiceData.caeNro },
       { name: 'fechaVtoCAE', label: 'Fecha Vto. CAE', value: this._invoiceData.fechaVtoCAE },
       { name: 'pagina', label: 'Página', value: this._invoiceData.pagina }
     ];
-    
     for (var m = 0; m < fields6.length; m++) {
       var field6 = this.createField(fields6[m].name, fields6[m].label, fields6[m].value);
       grid6.appendChild(field6);
     }
-    
     section6.appendChild(grid6);
     body.appendChild(section6);
     
-    // BOTONES DE ACCIÓN
+    // BOTONES
     var actions = document.createElement('div');
     actions.className = 'form-actions';
     
@@ -1230,7 +1091,6 @@ class AfipInvoiceForm extends HTMLElement {
     actions.appendChild(pdfDirectBtn);
     
     body.appendChild(actions);
-    
     form.appendChild(body);
     this.shadowRoot.appendChild(form);
   }
