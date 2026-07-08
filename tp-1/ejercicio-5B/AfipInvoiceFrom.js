@@ -3,28 +3,20 @@ class AfipInvoiceForm extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     
-    // Datos iniciales de la factura
     this._invoiceData = {
-      // Encabezado
       puntoVenta: '0002',
       comprobanteNro: '00000641',
       fechaEmision: '27/07/2016',
       cuit: '',
       ingresosBrutos: '',
       fechaInicio: '01/01/1980',
-      
-      // Periodo
       periodoDesde: '01/07/2016',
       periodoHasta: '31/07/2016',
       fechaVtoPago: '27/09/2016',
-      
-      // Cliente
       cuitCliente: '30522763922',
       razonSocial: 'INSTITUTO NACIONAL DE SERVICIOS SOCIALES PARA JUBILADOS Y PE',
       condicionIVA: 'IVA Sujeto Exento',
       condicionVenta: 'Cuenta Corriente',
-      
-      // Detalle de productos
       items: [
         { 
           codigo: 'UGL 6- CAPITA SALUD MENTAL PERIODO 06/16', 
@@ -72,13 +64,9 @@ class AfipInvoiceForm extends HTMLElement {
           subtotal: '28531,94' 
         }
       ],
-      
-      // Totales
       subtotal: '336583,16',
       otrosTributos: '0,00',
       total: '336583,16',
-      
-      // CAE
       caeNro: '66304278833647',
       fechaVtoCAE: '06/08/2016',
       pagina: '1/1'
@@ -86,7 +74,6 @@ class AfipInvoiceForm extends HTMLElement {
     
     this._currentItems = [];
     
-    // Bind de métodos
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleAddItem = this.handleAddItem.bind(this);
     this.handleRemoveItem = this.handleRemoveItem.bind(this);
@@ -103,12 +90,10 @@ class AfipInvoiceForm extends HTMLElement {
     this.renderItems();
   }
 
-  // === MÉTODOS DE MANEJO DE DATOS ===
   getFormData() {
     var form = this.shadowRoot.querySelector('#invoice-form');
     var formData = {};
     
-    // Obtener todos los inputs del formulario
     var inputs = form.querySelectorAll('input, select, textarea');
     for (var i = 0; i < inputs.length; i++) {
       var input = inputs[i];
@@ -117,9 +102,7 @@ class AfipInvoiceForm extends HTMLElement {
       }
     }
     
-    // Agregar los items
     formData.items = this._currentItems;
-    
     return formData;
   }
 
@@ -130,7 +113,6 @@ class AfipInvoiceForm extends HTMLElement {
     this.renderItems();
   }
 
-  // === MANEJO DE ITEMS ===
   handleAddItem() {
     var newItem = {
       codigo: '',
@@ -157,7 +139,6 @@ class AfipInvoiceForm extends HTMLElement {
   updateItem(index, field, value) {
     if (this._currentItems[index]) {
       this._currentItems[index][field] = value;
-      // Recalcular subtotal si es necesario
       if (field === 'precio' || field === 'cantidad' || field === 'bonif') {
         this.recalculateItem(index);
       }
@@ -203,12 +184,10 @@ class AfipInvoiceForm extends HTMLElement {
     var itemsContainer = this.shadowRoot.querySelector('#items-container');
     if (!itemsContainer) return;
     
-    // Limpiar contenedor
     while (itemsContainer.firstChild) {
       itemsContainer.removeChild(itemsContainer.firstChild);
     }
     
-    // Renderizar cada item
     for (var i = 0; i < this._currentItems.length; i++) {
       var itemRow = this.createItemRow(i, this._currentItems[i]);
       itemsContainer.appendChild(itemRow);
@@ -219,7 +198,6 @@ class AfipInvoiceForm extends HTMLElement {
     var row = document.createElement('div');
     row.className = 'item-row';
     
-    // Código
     var codigoDiv = document.createElement('div');
     codigoDiv.className = 'item-field';
     var codigoLabel = document.createElement('label');
@@ -237,7 +215,6 @@ class AfipInvoiceForm extends HTMLElement {
     codigoDiv.appendChild(codigoInput);
     row.appendChild(codigoDiv);
     
-    // Cantidad
     var cantDiv = document.createElement('div');
     cantDiv.className = 'item-field small';
     var cantLabel = document.createElement('label');
@@ -255,7 +232,6 @@ class AfipInvoiceForm extends HTMLElement {
     cantDiv.appendChild(cantInput);
     row.appendChild(cantDiv);
     
-    // Unidad
     var unidadDiv = document.createElement('div');
     unidadDiv.className = 'item-field';
     var unidadLabel = document.createElement('label');
@@ -273,7 +249,6 @@ class AfipInvoiceForm extends HTMLElement {
     unidadDiv.appendChild(unidadInput);
     row.appendChild(unidadDiv);
     
-    // Precio
     var precioDiv = document.createElement('div');
     precioDiv.className = 'item-field small';
     var precioLabel = document.createElement('label');
@@ -291,7 +266,6 @@ class AfipInvoiceForm extends HTMLElement {
     precioDiv.appendChild(precioInput);
     row.appendChild(precioDiv);
     
-    // Bonif
     var bonifDiv = document.createElement('div');
     bonifDiv.className = 'item-field small';
     var bonifLabel = document.createElement('label');
@@ -309,7 +283,6 @@ class AfipInvoiceForm extends HTMLElement {
     bonifDiv.appendChild(bonifInput);
     row.appendChild(bonifDiv);
     
-    // Subtotal
     var subtotalDiv = document.createElement('div');
     subtotalDiv.className = 'item-field small';
     var subtotalLabel = document.createElement('label');
@@ -325,7 +298,6 @@ class AfipInvoiceForm extends HTMLElement {
     subtotalDiv.appendChild(subtotalInput);
     row.appendChild(subtotalDiv);
     
-    // Botón eliminar
     var removeDiv = document.createElement('div');
     removeDiv.className = 'item-field remove-btn';
     var removeBtn = document.createElement('button');
@@ -342,7 +314,6 @@ class AfipInvoiceForm extends HTMLElement {
     return row;
   }
 
-  // === CARGA DE LIBRERÍAS ===
   loadHtml2PdfLibrary(callback) {
     if (typeof html2pdf !== 'undefined') {
       callback();
@@ -359,79 +330,133 @@ class AfipInvoiceForm extends HTMLElement {
     document.head.appendChild(script);
   }
 
-  // === EXPORTACIÓN DIRECTA A PDF ===
+  // === MÉTODO CORREGIDO PARA EXPORTAR PDF ===
   handleExportDirectPDF() {
     var btn = this.shadowRoot.querySelector('#pdf-direct-btn');
     var originalText = '📄 PDF Directo';
     if (btn) {
-      btn.textContent = '⏳ Preparando...';
+      btn.textContent = '⏳ Generando...';
       btn.disabled = true;
     }
-
-    try {
-      var formData = this.getFormData();
-
-      var total = 0;
-      for (var i = 0; i < formData.items.length; i++) {
-        var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
-        total += subtotal;
-      }
-      formData.subtotal = total.toFixed(2).replace('.', ',');
-      formData.total = total.toFixed(2).replace('.', ',');
-
-      var invoiceHTML = this.buildInvoiceHTML(formData);
-      var printWindow = window.open('', '_blank', 'width=1100,height=800');
-
-      if (!printWindow) {
-        alert('Por favor, permita las ventanas emergentes para generar el PDF.');
+    
+    this.loadHtml2PdfLibrary(function() {
+      try {
+        var formData = this.getFormData();
+        
+        // Actualizar totales
+        var total = 0;
+        for (var i = 0; i < formData.items.length; i++) {
+          var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
+          total += subtotal;
+        }
+        formData.subtotal = total.toFixed(2).replace('.', ',');
+        formData.total = total.toFixed(2).replace('.', ',');
+        
+        // Crear contenedor temporal
+        var tempContainer = document.createElement('div');
+        tempContainer.style.position = 'fixed';
+        tempContainer.style.left = '0';
+        tempContainer.style.top = '0';
+        tempContainer.style.width = '100%';
+        tempContainer.style.height = '100%';
+        tempContainer.style.background = 'white';
+        tempContainer.style.zIndex = '9999';
+        tempContainer.style.overflow = 'auto';
+        tempContainer.style.padding = '40px';
+        tempContainer.style.display = 'flex';
+        tempContainer.style.justifyContent = 'center';
+        tempContainer.style.alignItems = 'center';
+        
+        var invoiceHTML = this.buildInvoiceHTML(formData);
+        tempContainer.innerHTML = invoiceHTML;
+        document.body.appendChild(tempContainer);
+        
+        // Buscar el elemento de la factura
+        var invoiceElement = tempContainer.querySelector('.invoice');
+        if (!invoiceElement) {
+          console.error('No se encontró el elemento de la factura.');
+          document.body.removeChild(tempContainer);
+          if (btn) {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }
+          return;
+        }
+        
+        // Esperar a que los estilos se apliquen
+        var self = this;
+        var btnRef = btn;
+        var origText = originalText;
+        
+        // Usar requestAnimationFrame para asegurar que el DOM esté renderizado
+        requestAnimationFrame(function() {
+          setTimeout(function() {
+            // Configurar opciones mejoradas
+            var opt = {
+              margin: [10, 10, 10, 10],
+              filename: 'Factura_AFIP_' + (formData.comprobanteNro || '00000000') + '.pdf',
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { 
+                scale: 2, 
+                useCORS: true, 
+                logging: true,
+                width: invoiceElement.scrollWidth,
+                height: invoiceElement.scrollHeight,
+                windowWidth: invoiceElement.scrollWidth,
+                windowHeight: invoiceElement.scrollHeight
+              },
+              jsPDF: { 
+                unit: 'mm', 
+                format: 'a4', 
+                orientation: 'portrait' 
+              },
+              pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            
+            // Usar html2pdf con promesa
+            html2pdf()
+              .set(opt)
+              .from(invoiceElement)
+              .save()
+              .then(function() {
+                // Limpiar contenedor temporal
+                if (tempContainer.parentNode) {
+                  document.body.removeChild(tempContainer);
+                }
+                if (btnRef) {
+                  btnRef.textContent = origText;
+                  btnRef.disabled = false;
+                }
+                console.log('PDF generado con éxito.');
+              })
+              .catch(function(error) {
+                console.error('Error al generar PDF:', error);
+                alert('Ocurrió un error al generar el PDF. Por favor, intente de nuevo.');
+                if (tempContainer.parentNode) {
+                  document.body.removeChild(tempContainer);
+                }
+                if (btnRef) {
+                  btnRef.textContent = origText;
+                  btnRef.disabled = false;
+                }
+              });
+          }, 500);
+        });
+        
+      } catch (error) {
+        console.error('Error en la exportación:', error);
+        alert('Error al preparar la factura para PDF.');
         if (btn) {
           btn.textContent = originalText;
           btn.disabled = false;
         }
-        return;
       }
-
-      printWindow.document.open();
-      printWindow.document.write(invoiceHTML);
-      printWindow.document.close();
-      printWindow.focus();
-
-      var printInvoice = function() {
-        try {
-          printWindow.focus();
-          printWindow.print();
-        } catch (error) {
-          console.error('Error al abrir la impresión PDF:', error);
-        }
-      };
-
-      if (printWindow.document.readyState === 'complete') {
-        setTimeout(printInvoice, 300);
-      } else {
-        printWindow.addEventListener('load', function() {
-          setTimeout(printInvoice, 300);
-        }, { once: true });
-      }
-
-      if (btn) {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
-    } catch (error) {
-      console.error('Error en la exportación:', error);
-      alert('Error al preparar la factura para PDF.');
-      if (btn) {
-        btn.textContent = originalText;
-        btn.disabled = false;
-      }
-    }
+    }.bind(this));
   }
 
-  // === GENERAR FACTURA EN NUEVA PESTAÑA ===
   generateInvoice() {
     var formData = this.getFormData();
     
-    // Actualizar totales
     var total = 0;
     for (var i = 0; i < formData.items.length; i++) {
       var subtotal = parseFloat(formData.items[i].subtotal.replace(',', '.')) || 0;
@@ -440,7 +465,6 @@ class AfipInvoiceForm extends HTMLElement {
     formData.subtotal = total.toFixed(2).replace('.', ',');
     formData.total = total.toFixed(2).replace('.', ',');
     
-    // Abrir nueva pestaña
     var win = window.open('', '_blank', 'width=1100,height=800');
     if (!win) {
       alert('Por favor, permita las ventanas emergentes para ver la factura');
@@ -453,7 +477,6 @@ class AfipInvoiceForm extends HTMLElement {
     win.focus();
   }
 
-  // === CONSTRUIR HTML DE LA FACTURA ===
   buildInvoiceHTML(data) {
     var itemsRows = '';
     var totalFactura = 0;
@@ -464,13 +487,13 @@ class AfipInvoiceForm extends HTMLElement {
       totalFactura += subtotal;
       
       itemsRows += '<tr>';
-      itemsRows += '<td>' + (item.codigo || '') + '</td>';
-      itemsRows += '<td style="text-align:center;">' + (item.cantidad || '1,00') + '</td>';
-      itemsRows += '<td style="text-align:center;">' + (item.unidad || 'otras unidades') + '</td>';
-      itemsRows += '<td style="text-align:right;">$ ' + (item.precio || '0,00') + '</td>';
-      itemsRows += '<td style="text-align:center;">' + (item.bonif || '0,00') + '%</td>';
-      itemsRows += '<td style="text-align:right;">$ ' + (item.impBonif || '0,00') + '</td>';
-      itemsRows += '<td style="text-align:right;">$ ' + (item.subtotal || '0,00') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;">' + (item.codigo || '') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:center;">' + (item.cantidad || '1,00') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:center;">' + (item.unidad || 'otras unidades') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right;">$ ' + (item.precio || '0,00') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:center;">' + (item.bonif || '0,00') + '%</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right;">$ ' + (item.impBonif || '0,00') + '</td>';
+      itemsRows += '<td style="padding:8px;border-bottom:1px solid #ddd;text-align:right;">$ ' + (item.subtotal || '0,00') + '</td>';
       itemsRows += '</tr>';
     }
     
@@ -495,6 +518,7 @@ class AfipInvoiceForm extends HTMLElement {
             padding: 40px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
           }
           .invoice {
             max-width: 1100px;
@@ -619,7 +643,6 @@ class AfipInvoiceForm extends HTMLElement {
       </head>
       <body>
         <div class="invoice">
-          <!-- Encabezado -->
           <div class="header">
             <div class="header-left">
               <h1>FACTURA</h1>
@@ -635,7 +658,6 @@ class AfipInvoiceForm extends HTMLElement {
             </div>
           </div>
           
-          <!-- Periodo -->
           <div class="info-grid">
             <div>
               <span class="label">Periodo Facturado Desde:</span>
@@ -651,7 +673,6 @@ class AfipInvoiceForm extends HTMLElement {
             </div>
           </div>
           
-          <!-- Cliente -->
           <div class="info-grid" style="margin-top: 0;">
             <div style="grid-column: 1 / -1;">
               <span class="label">CUIT:</span>
@@ -671,17 +692,16 @@ class AfipInvoiceForm extends HTMLElement {
             </div>
           </div>
           
-          <!-- Tabla de items -->
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th style="text-align:center;">Cant.</th>
-                <th style="text-align:center;">U. Medida</th>
-                <th style="text-align:right;">Precio Unit.</th>
-                <th style="text-align:center;">% Bonif.</th>
-                <th style="text-align:right;">Imp. Bonif.</th>
-                <th style="text-align:right;">Subtotal</th>
+                <th style="padding:10px 8px;text-align:left;">Código</th>
+                <th style="padding:10px 8px;text-align:center;">Cant.</th>
+                <th style="padding:10px 8px;text-align:center;">U. Medida</th>
+                <th style="padding:10px 8px;text-align:right;">Precio Unit.</th>
+                <th style="padding:10px 8px;text-align:center;">% Bonif.</th>
+                <th style="padding:10px 8px;text-align:right;">Imp. Bonif.</th>
+                <th style="padding:10px 8px;text-align:right;">Subtotal</th>
               </tr>
             </thead>
             <tbody>
@@ -689,20 +709,17 @@ class AfipInvoiceForm extends HTMLElement {
             </tbody>
           </table>
           
-          <!-- Totales -->
           <div class="totals">
             <div><strong>Subtotal:</strong> $ ${data.subtotal || totalFormateado}</div>
             <div><strong>Importe Otros Tributos:</strong> $ ${data.otrosTributos || '0,00'}</div>
             <div class="total"><strong>Importe Total:</strong> $ ${data.total || totalFormateado}</div>
           </div>
           
-          <!-- CAE -->
           <div class="cae-section">
             <div><strong>CAE Nº:</strong> <span class="cae-number">${data.caeNro || ''}</span></div>
             <div style="margin-top:5px;"><strong>Fecha de Vto. de CAE:</strong> ${data.fechaVtoCAE || ''}</div>
           </div>
           
-          <!-- Footer -->
           <div class="footer">
             <div class="comprobante-autorizado">COMPROBANTE AUTORIZADO</div>
             <div style="margin-top:5px;">Pág. ${data.pagina || '1/1'}</div>
@@ -713,13 +730,11 @@ class AfipInvoiceForm extends HTMLElement {
     `;
   }
 
-  // === SUBMIT DEL FORMULARIO ===
   handleSubmit(event) {
     event.preventDefault();
     this.generateInvoice();
   }
 
-  // === RENDERIZADO PRINCIPAL ===
   render() {
     this.shadowRoot.textContent = '';
     
@@ -1005,12 +1020,10 @@ class AfipInvoiceForm extends HTMLElement {
     `;
     this.shadowRoot.appendChild(style);
     
-    // Contenedor principal
     var form = document.createElement('form');
     form.id = 'invoice-form';
     form.addEventListener('submit', this.handleSubmit);
     
-    // Header
     var header = document.createElement('div');
     header.className = 'form-header';
     
@@ -1026,11 +1039,10 @@ class AfipInvoiceForm extends HTMLElement {
     
     form.appendChild(header);
     
-    // Cuerpo del formulario
     var body = document.createElement('div');
     body.className = 'form-body';
     
-    // === SECCIÓN ENCABEZADO ===
+    // SECCIÓN ENCABEZADO
     var section1 = document.createElement('div');
     section1.className = 'form-section';
     
@@ -1059,7 +1071,7 @@ class AfipInvoiceForm extends HTMLElement {
     section1.appendChild(grid1);
     body.appendChild(section1);
     
-    // === SECCIÓN PERIODO ===
+    // SECCIÓN PERIODO
     var section2 = document.createElement('div');
     section2.className = 'form-section';
     
@@ -1085,7 +1097,7 @@ class AfipInvoiceForm extends HTMLElement {
     section2.appendChild(grid2);
     body.appendChild(section2);
     
-    // === SECCIÓN CLIENTE ===
+    // SECCIÓN CLIENTE
     var section3 = document.createElement('div');
     section3.className = 'form-section';
     
@@ -1112,7 +1124,7 @@ class AfipInvoiceForm extends HTMLElement {
     section3.appendChild(grid3);
     body.appendChild(section3);
     
-    // === SECCIÓN ITEMS ===
+    // SECCIÓN ITEMS
     var section4 = document.createElement('div');
     section4.className = 'form-section';
     
@@ -1145,7 +1157,7 @@ class AfipInvoiceForm extends HTMLElement {
     
     body.appendChild(section4);
     
-    // === SECCIÓN TOTALES ===
+    // SECCIÓN TOTALES
     var section5 = document.createElement('div');
     section5.className = 'form-section';
     
@@ -1171,7 +1183,7 @@ class AfipInvoiceForm extends HTMLElement {
     section5.appendChild(grid5);
     body.appendChild(section5);
     
-    // === SECCIÓN CAE ===
+    // SECCIÓN CAE
     var section6 = document.createElement('div');
     section6.className = 'form-section';
     
@@ -1197,7 +1209,7 @@ class AfipInvoiceForm extends HTMLElement {
     section6.appendChild(grid6);
     body.appendChild(section6);
     
-    // === BOTONES DE ACCIÓN ===
+    // BOTONES DE ACCIÓN
     var actions = document.createElement('div');
     actions.className = 'form-actions';
     
@@ -1223,7 +1235,6 @@ class AfipInvoiceForm extends HTMLElement {
     this.shadowRoot.appendChild(form);
   }
 
-  // === MÉTODO AUXILIAR PARA CREAR CAMPOS ===
   createField(name, label, value, fullWidth) {
     var div = document.createElement('div');
     div.className = 'form-field';
@@ -1242,7 +1253,6 @@ class AfipInvoiceForm extends HTMLElement {
     input.value = value || '';
     input.id = name;
     
-    // Hacer readonly para campos calculados
     if (name === 'subtotal' || name === 'total') {
       input.readOnly = true;
     }
@@ -1252,5 +1262,4 @@ class AfipInvoiceForm extends HTMLElement {
   }
 }
 
-// Registrar el componente
 customElements.define('afip-invoice-form', AfipInvoiceForm);
