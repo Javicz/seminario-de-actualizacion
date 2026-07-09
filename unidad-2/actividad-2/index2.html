@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
   
   <style>
-    body { font-family: "Roboto", sans-serif; }
+    body { font-family: "Roboto", sans-serif; margin: 0; }
     .w3-bar-block .w3-bar-item {
       padding: 16px;
       font-weight: bold;
@@ -19,46 +19,64 @@
   </style>
 </head>
 <body>
-
-  <script type="text/javascript">
-
+  <script>
     class WCApplicationView extends HTMLElement {
+      
+      // ---------- CONSTRUCTOR ----------
       constructor() {
         super();
-        
+
+        // 1. Crear los elementos del DOM
         this.sidebar = document.createElement('nav');
         this.overlay = document.createElement('div');
         this.mainContainer = document.createElement('div');
-        
         this.topBar = document.createElement('div');
         this.bodyContent = document.createElement('div');
         this.footer = document.createElement('footer');
 
-        // Pre-vinculamos los métodos al contexto de la clase para usarlos de forma segura en los listeners
-        this.handleSidebarOpen = this.handleSidebarOpen.bind(this);
-        this.handleSidebarClose = this.handleSidebarClose.bind(this);
-        this.handleAccordionToggle = this.handleAccordionToggle.bind(this);
-        this.handleWindowScroll = this.handleWindowScroll.bind(this);
-      }
+        // 2. Construir la estructura métodos auxiliares
+        this._buildSidebar();
+        this._buildOverlay();
+        this._buildMainLayout();
 
-      connectedCallback() {
-        this.buildSidebar();
-        this.buildOverlay();
-        this.buildMainLayout();
-
+        // 3. Agregar los elementos al componente 
         this.appendChild(this.sidebar);
         this.appendChild(this.overlay);
         this.appendChild(this.mainContainer);
 
-        this.setupEvents();
+        // 4. Vincular los métodos 
+        this._handleSidebarOpen = this._handleSidebarOpen.bind(this);
+        this._handleSidebarClose = this._handleSidebarClose.bind(this);
+        this._handleAccordionToggle = this._handleAccordionToggle.bind(this);
+        this._handleWindowScroll = this._handleWindowScroll.bind(this);
       }
 
-      buildSidebar() {
+      // ---------- CONNECTED CALLBACK ----------
+      connectedCallback() {
+        this._getElement('#btnSidebarOpen').addEventListener('click', this._handleSidebarOpen);
+        this._getElement('#btnSidebarClose').addEventListener('click', this._handleSidebarClose);
+        this.overlay.addEventListener('click', this._handleSidebarClose);
+        this._getElement('#btnAccordionToggle').addEventListener('click', this._handleAccordionToggle);
+        window.addEventListener('scroll', this._handleWindowScroll);
+      }
+
+      // ---------- DISCONNECTED CALLBACK ----------
+      disconnectedCallback() {
+        this._getElement('#btnSidebarOpen').removeEventListener('click', this._handleSidebarOpen);
+        this._getElement('#btnSidebarClose').removeEventListener('click', this._handleSidebarClose);
+        this.overlay.removeEventListener('click', this._handleSidebarClose);
+        this._getElement('#btnAccordionToggle').removeEventListener('click', this._handleAccordionToggle);
+        window.removeEventListener('scroll', this._handleWindowScroll);
+      }
+
+      // ---------- MÉTODOS AUXILIARES DE CONSTRUCCIÓN ----------
+      _buildSidebar() {
         this.sidebar.className = "w3-sidebar w3-bar-block w3-collapse w3-animate-left w3-card";
         this.sidebar.style.zIndex = "3";
         this.sidebar.style.width = "250px";
         this.sidebar.id = "mySidebar";
 
+        // Logo / Brand
         const brandLink = document.createElement('a');
         brandLink.className = "w3-bar-item w3-button w3-border-bottom w3-large";
         brandLink.href = "#";
@@ -68,6 +86,7 @@
         brandLink.appendChild(brandImg);
         this.sidebar.appendChild(brandLink);
 
+        // Botón cerrar 
         const closeLink = document.createElement('a');
         closeLink.className = "w3-bar-item w3-button w3-hide-large w3-large";
         closeLink.href = "javascript:void(0)";
@@ -78,6 +97,7 @@
         closeLink.appendChild(closeIcon);
         this.sidebar.appendChild(closeLink);
 
+        // Elementos del menú
         const menuItems = [
           { name: 'Home', style: 'w3-teal' },
           { name: 'Link 1', style: '' },
@@ -87,16 +107,17 @@
           { name: 'Link 5', style: '' }
         ];
 
-        menuItems.forEach(function(item) {
+        for (let i = 0; i < menuItems.length; i++) {
+          const item = menuItems[i];
           const a = document.createElement('a');
           a.className = ("w3-bar-item w3-button " + item.style).trim();
           a.href = "#";
           a.textContent = item.name;
           this.sidebar.appendChild(a);
-        }.bind(this)); // Pasamos el contexto al bucle forEach tradicional
+        }
 
+        // Dropdown (accordion)
         const accordionWrapper = document.createElement('div');
-        
         const accordionToggle = document.createElement('a');
         accordionToggle.className = "w3-bar-item w3-button";
         accordionToggle.href = "javascript:void(0)";
@@ -115,24 +136,25 @@
           const subLink = document.createElement('a');
           subLink.className = "w3-bar-item w3-button";
           subLink.href = "#";
-          subLink.textContent = "Link";
+          subLink.textContent = "Link " + (i + 1);
           accordionContent.appendChild(subLink);
         }
-        
+
         accordionWrapper.appendChild(accordionContent);
         this.sidebar.appendChild(accordionWrapper);
       }
 
-      buildOverlay() {
+      _buildOverlay() {
         this.overlay.className = "w3-overlay w3-hide-large w3-animate-opacity";
         this.overlay.style.cursor = "pointer";
         this.overlay.id = "myOverlay";
       }
 
-      buildMainLayout() {
+      _buildMainLayout() {
         this.mainContainer.className = "w3-main";
         this.mainContainer.style.marginLeft = "250px";
 
+        // ---- Top Bar ----
         this.topBar.className = "w3-container w3-top w3-theme w3-large";
         this.topBar.id = "myTop";
         this.topBar.style.display = "flex";
@@ -140,6 +162,7 @@
         this.topBar.style.alignItems = "center";
         this.topBar.style.height = "55px";
 
+        // Hamburguesa (solo móvil)
         const hamburgerContainer = document.createElement('p');
         hamburgerContainer.style.margin = "0";
         const hamburgerIcon = document.createElement('i');
@@ -148,6 +171,7 @@
         hamburgerContainer.appendChild(hamburgerIcon);
         this.topBar.appendChild(hamburgerContainer);
 
+        // Botones a la derecha (sin barra de búsqueda)
         const rightGroup = document.createElement('div');
         rightGroup.className = "w3-right";
 
@@ -165,15 +189,19 @@
 
         this.mainContainer.appendChild(this.topBar);
 
+        // Espaciador por el top bar fijo
         const topSpacer = document.createElement('div');
         topSpacer.style.height = "55px";
         this.mainContainer.appendChild(topSpacer);
 
+        // ---- Cuerpo derecho vacío ----
         this.bodyContent.className = "w3-container";
         this.bodyContent.style.padding = "32px";
         this.bodyContent.style.minHeight = "calc(100vh - 170px)";
+        // Dejamos el cuerpo vacío sin contenido
         this.mainContainer.appendChild(this.bodyContent);
 
+        // ---- Footer ----
         this.footer.className = "w3-container w3-theme";
         this.footer.style.padding = "32px";
         const footerParagraph = document.createElement('p');
@@ -182,31 +210,31 @@
         this.mainContainer.appendChild(this.footer);
       }
 
-      // --- Métodos manejadores escritos en funciones estándar ---
-      handleSidebarOpen() {
+      // ---------- MÉTODOS MANEJADORES  ----------
+      _handleSidebarOpen() {
         this.sidebar.style.display = "block";
         this.overlay.style.display = "block";
       }
 
-      handleSidebarClose() {
+      _handleSidebarClose() {
         this.sidebar.style.display = "none";
         this.overlay.style.display = "none";
       }
 
-      handleAccordionToggle() {
-        const accordionToggle = this.querySelector('#btnAccordionToggle');
-        const accordionContent = this.querySelector('#appAccordionMenu');
+      _handleAccordionToggle() {
+        const toggle = this._getElement('#btnAccordionToggle');
+        const content = this._getElement('#appAccordionMenu');
 
-        if (accordionContent.classList.contains('w3-show')) {
-          accordionContent.classList.remove('w3-show');
-          accordionToggle.classList.remove('w3-theme');
+        if (content.classList.contains('w3-show')) {
+          content.classList.remove('w3-show');
+          toggle.classList.remove('w3-theme');
         } else {
-          accordionContent.classList.add('w3-show');
-          accordionToggle.classList.add('w3-theme');
+          content.classList.add('w3-show');
+          toggle.classList.add('w3-theme');
         }
       }
 
-      handleWindowScroll() {
+      _handleWindowScroll() {
         if (document.body.scrollTop > 50 || document.documentElement.scrollTop > 50) {
           this.topBar.classList.add("w3-card-4", "w3-animate-opacity");
         } else {
@@ -214,19 +242,20 @@
         }
       }
 
-      setupEvents() {
-        // Asignación de los escuchadores utilizando los métodos previamente enlazados en el constructor
-        this.querySelector('#btnSidebarOpen').addEventListener('click', this.handleSidebarOpen);
-        this.querySelector('#btnSidebarClose').addEventListener('click', this.handleSidebarClose);
-        this.overlay.addEventListener('click', this.handleSidebarClose);
-        this.querySelector('#btnAccordionToggle').addEventListener('click', this.handleAccordionToggle);
-        
-        window.addEventListener('scroll', this.handleWindowScroll);
+      // ---------- MÉTODO AUXILIAR  ----------
+      _getElement(selector) {
+        return this.querySelector(selector);
       }
     }
 
+    // ============================================================
+    // REGISTRO DEL WEB COMPONENT
+    // ============================================================
     customElements.define('wc-application-view', WCApplicationView);
 
+    // ============================================================
+    // INSTANCIACIÓN
+    // ============================================================
     function main() {
       const view = new WCApplicationView();
       document.body.appendChild(view);
