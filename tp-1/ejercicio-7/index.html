@@ -1,19 +1,293 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TP 1 - Ejercicio 7: Alternancia Celsius/Fahrenheit</title>
-  <script src="WeatherDataExtended.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima</title>
 </head>
-<body style="background-color: #f8fafc; margin: 0; padding: 40px;">
-
-  <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #1e293b; font-size: 24px; font-family: sans-serif;">Visualizador Meteorológico Adaptativo</h1>
-    <p style="color: #475569; font-family: sans-serif;">Haga clic en el botón superior derecho del componente para alternar el sistema métrico térmico.</p>
-  </div>
-
-  <weather-data-extended></weather-data-extended>
-
+<body>   
 </body>
+<script>
+
+class clima extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        
+        // ===== UNIDAD ACTUAL =====
+        this._unit = 'C'; // 'C' o 'F'
+        
+        // ===== MESES =====
+        this.months = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'anual'
+        ];
+        
+        // ===== DATOS METEOROLÓGICOS (en °C) =====
+        this.data = [
+            { name: "Temp. máx. abs. (°C)", values: [42.4, 39.1, 36.9, 32.5, 27.4, 22.2, 27.7, 24.7, 28.8, 34.4, 35.7, 39.4, 39.4] },
+            { name: "Temp. máx. media (°C)", values: [28.3, 25.8, 23.7, 20.5, 16.8, 13.8, 13.1, 14.4, 16.0, 18.5, 21.7, 24.4, 19.6] },
+            { name: "Temp. media (°C)", values: [20.3, 19.9, 18.0, 14.0, 11.3, 8.5, 8.1, 8.9, 10.5, 13.1, 15.9, 18.5, 14.0] },
+            { name: "Temp. mín. media (°C)", values: [14.3, 14.1, 12.5, 9.1, 6.4, 4.1, 3.8, 4.0, 5.3, 7.6, 10.1, 12.7, 8.7] },
+            { name: "Temp. mín. abs. (°C)", values: [4.7, 1.2, 1.9, -1.0, -3.0, -5.5, -9.3, -6.4, -5.5, -3.0, -2.0, -0.2, -9.3] },
+            { name: "Precipitación total (mm)", values: [100.1, 72.8, 107.0, 73.3, 73.5, 54.9, 58.9, 64.0, 56.4, 83.4, 75.3, 104.0, 923.6] },
+            { name: "Días de precipitaciones (≥ 0.1 mm)", values: [9, 8, 9, 9, 9, 9, 9, 8, 7, 10, 10, 10, 107] },
+            { name: "Horas de sol", values: [288.3, 234.5, 232.5, 195.0, 167.4, 120.0, 127.1, 164.3, 174.0, 210.8, 222.0, 269.7, 2405.6] },
+            { name: "Humedad relativa (%)", values: [76, 77, 79, 81, 83, 84, 81, 81, 80, 80, 77, 76, 80] }
+        ];
+        
+        // ===== BOTÓN DE CAMBIO DE UNIDAD =====
+        this.toggleButton = document.createElement('button');
+        this.toggleButton.textContent = 'Cambiar a °F';
+        this.toggleButton.style.marginTop = '15px';
+        this.toggleButton.style.marginRight = '10px';
+        this.toggleButton.style.padding = '10px 20px';
+        this.toggleButton.style.backgroundColor = '#2196F3';
+        this.toggleButton.style.color = 'white';
+        this.toggleButton.style.border = 'none';
+        this.toggleButton.style.borderRadius = '5px';
+        this.toggleButton.style.cursor = 'pointer';
+        this.toggleButton.style.fontWeight = 'bold';
+        
+        // ===== BOTÓN DE PROMEDIOS =====
+        this.promedioButton = document.createElement('button');
+        this.promedioButton.textContent = 'Obtener promedios de temperaturas';
+        this.promedioButton.style.marginTop = '15px';
+        this.promedioButton.style.padding = '10px 20px';
+        this.promedioButton.style.backgroundColor = '#4CAF50';
+        this.promedioButton.style.color = 'white';
+        this.promedioButton.style.border = 'none';
+        this.promedioButton.style.borderRadius = '5px';
+        this.promedioButton.style.cursor = 'pointer';
+        this.promedioButton.style.fontWeight = 'bold';
+        
+        // Vincular métodos
+        this._toggleUnit = this._toggleUnit.bind(this);
+        this._showPromedios = this._showPromedios.bind(this);
+        
+        // Renderizar
+        this.render();
+        
+        // Agregar botones
+        this.shadowRoot.appendChild(this.toggleButton);
+        this.shadowRoot.appendChild(this.promedioButton);
+    }
+
+    // ===== CONVERTIR TEMPERATURA =====
+    _convertTemp(celsius) {
+        if (this._unit === 'F') {
+            return parseFloat(((celsius * 9) / 5 + 32).toFixed(1));
+        }
+        return celsius;
+    }
+
+    // ===== OBTENER SÍMBOLO DE UNIDAD =====
+    _getUnitSymbol() {
+        return this._unit === 'C' ? '°C' : '°F';
+    }
+
+    // ===== CONNECTED CALLBACK =====
+    connectedCallback() {
+        this.toggleButton.onclick = this._toggleUnit;
+        this.promedioButton.onclick = this._showPromedios;
+    }
+
+    // ===== DISCONNECTED CALLBACK =====
+    disconnectedCallback() {
+        this.toggleButton.onclick = null;
+        this.promedioButton.onclick = null;
+    }
+
+    // ===== CAMBIAR UNIDAD =====
+    _toggleUnit() {
+        this._unit = this._unit === 'C' ? 'F' : 'C';
+        this.toggleButton.textContent = 'Cambiar a °' + (this._unit === 'C' ? 'F' : 'C');
+        this.render();
+    }
+
+    // ===== COLORES PARA TEMPERATURAS =====
+    _getColor(value, min, max, isMinTemp) {
+        if (min === max) return isMinTemp ? '#0066ff' : '#ff0000';
+        var position = (value - min) / (max - min);
+        if (isMinTemp) {
+            var hue = 240 - 180 * position;
+            return 'hsl(' + hue + ', 100%, 65%)';
+        } else {
+            var hue2 = 60 * (1 - position);
+            return 'hsl(' + hue2 + ', 100%, 65%)';
+        }
+    }
+
+    // ===== MOSTRAR PROMEDIOS =====
+    _showPromedios() {
+        var promedios = this.getTemperaturesAverage();
+        var msg = "PROMEDIOS DE TEMPERATURAS (" + this._getUnitSymbol() + "):\n\n";
+        for (var key in promedios) {
+          msg += key + ": " + promedios[key] + " " + this._getUnitSymbol() + "\n";
+        }
+        alert(msg);
+    }
+
+    getTemperaturesAverage() {
+        var tempRows = [];
+        var result = {};
+        
+        for (var i = 0; i < this.data.length; i++) {
+            var row = this.data[i];
+            if (row.name.includes("máx. media") ||
+                row.name.includes("media (°C)") ||
+                row.name.includes("mín. media")) {
+                tempRows.push(row);
+            }
+        }
+        
+        for (var j = 0; j < tempRows.length; j++) {
+            var row = tempRows[j];
+            var cleanName = row.name.replace(" (°C)", "");
+            var sum = 0;
+            var count = 0;
+            
+            for (var k = 0; k < row.values.length; k++) {
+                sum += this._convertTemp(row.values[k]);
+                count++;
+            }
+            
+            result[cleanName] = parseFloat((sum / count).toFixed(1));
+        }
+        
+        return result;
+    }
+
+    // ===== RENDER =====
+    render() {
+        while (this.shadowRoot.firstChild) {
+            this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+        }
+        
+        // ===== TABLA =====
+        var table = document.createElement('table');
+        table.style.borderCollapse = 'collapse';
+        table.style.width = '100%';
+        table.style.fontFamily = 'Arial, sans-serif';
+        table.style.fontSize = '14px';
+        table.style.border = '1px solid #ddd';
+
+        // ===== ENCABEZADO =====
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
+        headerRow.style.backgroundColor = '#f2f2f2';
+        
+        var mesHeader = document.createElement('th');
+        mesHeader.textContent = 'Mes';
+        mesHeader.style.padding = '8px';
+        mesHeader.style.textAlign = 'left';
+        mesHeader.style.border = '1px solid #ddd';
+        headerRow.appendChild(mesHeader);
+
+        for (var i = 0; i < this.months.length; i++) {
+            var month = this.months[i];
+            var th = document.createElement('th');
+            th.textContent = month;
+            th.style.padding = '8px';
+            th.style.textAlign = 'center';
+            th.style.border = '1px solid #ddd';
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // ===== CUERPO =====
+        var tbody = document.createElement('tbody');
+        
+        for (var r = 0; r < this.data.length; r++) {
+            var row = this.data[r];
+            var tr = document.createElement('tr');
+
+            // Nombre de la fila (actualizar unidad si es temperatura)
+            var nameCell = document.createElement('td');
+            var displayName = row.name;
+            if (row.name.includes('Temp.') && row.name.includes('(°C)')) {
+                displayName = row.name.replace('(°C)', '(' + this._getUnitSymbol() + ')');
+            }
+            nameCell.textContent = displayName;
+            nameCell.style.fontWeight = 'bold';
+            nameCell.style.padding = '8px';
+            nameCell.style.textAlign = 'left';
+            nameCell.style.border = '1px solid #ddd';
+            tr.appendChild(nameCell);
+
+            var isTempRow = row.name.startsWith('Temp.');
+            var isMinTempRow = isTempRow && row.name.includes('mín.');
+
+            // Calcular min/max para colores (usando valores convertidos)
+            var rowMin = Infinity;
+            var rowMax = -Infinity;
+            var convertedValues = [];
+
+            if (isTempRow) {
+                for (var v = 0; v < row.values.length; v++) {
+                    var converted = this._convertTemp(row.values[v]);
+                    convertedValues.push(converted);
+                    if (converted < rowMin) rowMin = converted;
+                    if (converted > rowMax) rowMax = converted;
+                }
+            }
+
+            for (var c = 0; c < row.values.length; c++) {
+                var td = document.createElement('td');
+                var displayValue = isTempRow ? this._convertTemp(row.values[c]) : row.values[c];
+                td.textContent = displayValue;
+                td.style.padding = '8px';
+                td.style.textAlign = 'center';
+                td.style.border = '1px solid #ddd';
+
+                if (isTempRow) {
+                    td.style.backgroundColor = this._getColor(displayValue, rowMin, rowMax, isMinTempRow);
+                }
+
+                tr.appendChild(td);
+            }
+
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        this.shadowRoot.appendChild(table);
+
+        // ===== FUENTES =====
+        var footer = document.createElement('div');
+        footer.style.fontSize = '0.8em';
+        footer.style.marginTop = '10px';
+        footer.style.color = '#666';
+
+        var p1 = document.createElement('p');
+        p1.textContent = 'Fuente n° 1: NOAA. Servicio Meteorológico Nacional (precipitación diaria)';
+        p1.style.margin = '4px 0';
+
+        var p2 = document.createElement('p');
+        p2.textContent = 'Fuente n° 2: UNLP (sun only)';
+        p2.style.margin = '4px 0';
+
+        footer.appendChild(p1);
+        footer.appendChild(p2);
+
+        this.shadowRoot.appendChild(footer);
+        
+        // Agregar botones al final
+        this.shadowRoot.appendChild(this.toggleButton);
+        this.shadowRoot.appendChild(this.promedioButton);
+    }
+}
+
+// ===== REGISTRAR COMPONENTE =====
+customElements.define('x-clima', clima);
+
+// ===== CREAR INSTANCIA =====
+function main() {
+    var myClima = new clima();
+    document.body.appendChild(myClima);
+}
+
+window.onload = main;
+</script>
 </html>

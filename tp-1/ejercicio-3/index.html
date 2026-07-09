@@ -1,44 +1,213 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Test - Graphic Equalizer</title>
-  <script src="GraphicEqualizer.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equalizer</title>
 </head>
-<body style="background-color: #3e3e3e; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0;">
-
-  <graphic-equalizer id="miEcualizador"></graphic-equalizer>
-
-  <script type="text/javascript">
-    window.addEventListener('DOMContentLoaded', function() {
-      const eq = document.getElementById('miEcualizador');
-
-      // Simulación de respuesta asíncrona: pasados 3 segundos mutamos mediante setData()
-      setTimeout(function() {
-        console.log("Cargando Preset de ecualización externa mediante setData()...");
-        
-        eq.setData({
-          preset: 'Rock Classic',
-          bands: [
-            { frequency: '32Hz', db: 5.5 },
-            { frequency: '64Hz', db: 4 },
-            { frequency: '130Hz', db: -1 },
-            { frequency: '260Hz', db: -3.5 },
-            { frequency: '500Hz', db: -2 },
-            { frequency: '1k', db: 0.5 },
-            { frequency: '2k', db: 3 },
-            { frequency: '4k', db: 4.5 },
-            { frequency: '8.3k', db: 6 },
-            { frequency: '16.5k', db: 5 }
-          ]
-        });
-
-        // Comprobación de integridad de datos por consola
-        console.log("getData() obtenido:", eq.getData());
-      }, 3000);
-    });
-  </script>
-
+<body>   
 </body>
+<script>
+class equalizer extends HTMLElement {
+    constructor() {
+        super();
+        
+        // ===== SLIDERS =====
+        this.slider1 = document.createElement('input');
+        this.slider2 = document.createElement('input');
+        this.slider3 = document.createElement('input');
+        this.slider4 = document.createElement('input');
+        this.slider5 = document.createElement('input');
+        this.slider6 = document.createElement('input');
+        this.slider7 = document.createElement('input');
+        this.slider8 = document.createElement('input');
+        this.slider9 = document.createElement('input');
+        this.slider0 = document.createElement('input');
+        this.container = document.createElement('div');
+
+        // ===== CONTENEDOR =====
+        this.container.style.display = 'flex';
+        this.appendChild(this.container);
+
+        // ===== ARRAY DE SLIDERS =====
+        this.sliders = [
+            this.slider0,
+            this.slider1,
+            this.slider2,
+            this.slider3,
+            this.slider4,
+            this.slider5,
+            this.slider6,
+            this.slider7,
+            this.slider8,
+            this.slider9
+        ];
+
+        // ===== CONFIGURAR SLIDERS =====
+        for (var i = 0; i < this.sliders.length; i++) {
+            var slider = this.sliders[i];
+            slider.type = 'range';
+            slider.min = -12;
+            slider.max = 12;
+            slider.value = 0;
+            slider.style.writingMode = 'bt-lr';
+            slider.style.height = '180px';
+            slider.style.width = '100px';
+            slider.style.transform = 'rotate(-90deg)';
+            slider.style.background = '#555';
+            slider.style.accentColor = '#667eea';
+            slider.style.cursor = 'pointer';
+        }
+
+        // ===== DATA =====
+        this.data = [
+            { freq: '32Hz', value: 0 },
+            { freq: '64Hz', value: 0 },
+            { freq: '130Hz', value: 0 },
+            { freq: '260Hz', value: 0 },
+            { freq: '500Hz', value: 0 },
+            { freq: '1k', value: 0 },
+            { freq: '2k', value: 0 },
+            { freq: '4k', value: 0 },
+            { freq: '8.3k', value: 0 },
+            { freq: '16.5k', value: 0 }
+        ];
+
+        // ===== CREAR BANDAS =====
+        for (var j = 0; j < this.sliders.length; j++) {
+            var slider = this.sliders[j];
+            var bandContainer = document.createElement('div');
+            bandContainer.style.display = 'flex';
+            bandContainer.style.flexDirection = 'column';
+            bandContainer.style.alignItems = 'center';
+            bandContainer.style.gap = '4px';
+
+            var valueLabel = document.createElement('p');
+            valueLabel.textContent = slider.value + 'dB';
+
+            var freqLabel = document.createElement('p');
+            freqLabel.textContent = this.data[j].freq;
+
+            slider.dataset.index = j;
+            slider.valueLabel = valueLabel;
+            
+            bandContainer.appendChild(freqLabel);
+            bandContainer.appendChild(slider);
+            bandContainer.appendChild(valueLabel);
+            this.container.appendChild(bandContainer);
+
+            // Estilos
+            valueLabel.style.color = '#a0aec0';
+            freqLabel.style.color = '#a0aec0';
+            valueLabel.style.fontSize = '12px';
+            freqLabel.style.fontSize = '12px';
+            valueLabel.style.margin = '0';
+            freqLabel.style.margin = '0';
+            valueLabel.style.fontWeight = 'bold';
+            freqLabel.style.fontWeight = 'bold';
+            valueLabel.style.minWidth = '40px';
+            valueLabel.style.textAlign = 'center';
+            bandContainer.style.display = 'flex';
+            bandContainer.style.flexDirection = 'column';
+            bandContainer.style.alignItems = 'center';
+        }
+
+        // ===== ESTILO DEL CONTENEDOR =====
+        this.container.style.display = 'flex';
+        this.container.style.gap = '6px';
+        this.container.style.backgroundColor = '#1a202c';
+        this.container.style.borderRadius = '12px';
+        this.container.style.alignItems = 'flex-end';
+        this.container.style.padding = '30px 20px 20px 20px';
+        this.container.style.minHeight = '320px';
+        this.container.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
+        this.container.style.border = '1px solid #2d3748';
+    }
+
+    // ===== MANEJADOR DE INPUT =====
+    handleSliderInput(event) {
+        var slider = event.target;
+        var index = parseInt(slider.dataset.index);
+        this.data[index].value = parseInt(slider.value);
+        slider.valueLabel.textContent = slider.value + 'dB';
+        
+        // Cambiar color según valor
+        var value = parseInt(slider.value);
+        if (value > 0) {
+            slider.valueLabel.style.color = '#48bb78';
+        } else if (value < 0) {
+            slider.valueLabel.style.color = '#fc8181';
+        } else {
+            slider.valueLabel.style.color = '#a0aec0';
+        }
+        
+        console.log(this.data[index].freq + ' → ' + slider.value);
+    }
+
+    // ===== CONNECTED CALLBACK =====
+    connectedCallback() {
+        for (var i = 0; i < this.sliders.length; i++) {
+            this.sliders[i].oninput = this.handleSliderInput.bind(this);
+        }
+    }
+
+    // ===== DISCONNECTED CALLBACK =====
+    disconnectedCallback() {
+        for (var i = 0; i < this.sliders.length; i++) {
+            this.sliders[i].oninput = null;
+        }
+    }
+
+    // ===== GET DATA =====
+    getData() {
+        return this.data;
+    }
+
+    // ===== RENDER =====
+    render() {
+        for (var i = 0; i < this.sliders.length; i++) {
+            this.sliders[i].value = this.data[i].value;
+            this.sliders[i].valueLabel.textContent = this.data[i].value + 'dB';
+            
+            var value = this.data[i].value;
+            if (value > 0) {
+                this.sliders[i].valueLabel.style.color = '#48bb78';
+            } else if (value < 0) {
+                this.sliders[i].valueLabel.style.color = '#fc8181';
+            } else {
+                this.sliders[i].valueLabel.style.color = '#a0aec0';
+            }
+        }
+    }
+
+    // ===== SET DATA =====
+    setData(newData) {
+        if (!newData || !Array.isArray(newData)) return;
+        this.data = newData;
+        this.render();
+    }
+}
+
+// ===== REGISTRAR COMPONENTE =====
+customElements.define('x-equalizer', equalizer);
+
+// ===== CREAR INSTANCIA =====
+function main() {
+    var myEqualizer = new equalizer();
+    document.body.appendChild(myEqualizer);
+
+    console.log(' Equalizer cargado correctamente');
+    console.log(' Métodos:');
+    console.log('  - getData() : Obtener datos');
+    console.log('  - setData(nuevosDatos) : Asignar datos y actualizar vista');
+    console.log('  - render() : Actualizar visual');
+    console.log('');
+    console.log(' Prueba desde consola:');
+    console.log('  var eq = document.querySelector("x-equalizer")');
+    console.log('  eq.getData()');
+    console.log('  eq.setData([{freq:"32Hz",value:5},{freq:"64Hz",value:-3},...])');
+}
+
+window.onload = main;
+</script>
 </html>

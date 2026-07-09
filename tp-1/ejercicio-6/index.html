@@ -1,32 +1,236 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TP 1 - Ejercicio 6: Datos Meteorológicos</title>
-  <script src="WeatherData.js" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clima - Mar del Plata</title>
 </head>
-<body style="background-color: #f0f4f8; margin: 0; padding: 40px; font-family: sans-serif;">
-
-  <div style="text-align: center; margin-bottom: 20px;">
-    <h1 style="color: #334155; font-size: 24px;">Demostración de WebComponent Meteorológico</h1>
-  </div>
-
-  <weather-data id="climaMDQ"></weather-data>
-
-  <script type="text/javascript">
-    window.addEventListener('DOMContentLoaded', function() {
-      const component = document.getElementById('climaMDQ');
-
-      console.log("%c--- EJERCICIO 6: RESULTADO DEL MÉTODO SOLICITADO ---", "color: #0284c7; font-weight: bold; font-size: 13px;");
-      
-      const promediosTermicos = component.getTemperaturesAverage();
-      console.dir(promediosTermicos);
-
-      console.log("%c\n--- DATOS INTERNOS (getData) ---", "color: #16a34a; font-weight: bold;");
-      console.log(component.getData());
-    });
-  </script>
-
+<body>   
 </body>
+<script>
+class Clima extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+
+        // Meses del año (incluye "anual")
+        this.months = [
+            'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'anual'
+        ];
+
+        // Datos meteorológicos (en °C)
+        this.data = [
+            { name: "Temp. máx. abs. (°C)", values: [42.4, 39.1, 36.9, 32.5, 27.4, 22.2, 27.7, 24.7, 28.8, 34.4, 35.7, 39.4, 39.4] },
+            { name: "Temp. máx. media (°C)", values: [28.3, 25.8, 23.7, 20.5, 16.8, 13.8, 13.1, 14.4, 16.0, 18.5, 21.7, 24.4, 19.6] },
+            { name: "Temp. media (°C)", values: [20.3, 19.9, 18.0, 14.0, 11.3, 8.5, 8.1, 8.9, 10.5, 13.1, 15.9, 18.5, 14.0] },
+            { name: "Temp. mín. media (°C)", values: [14.3, 14.1, 12.5, 9.1, 6.4, 4.1, 3.8, 4.0, 5.3, 7.6, 10.1, 12.7, 8.7] },
+            { name: "Temp. mín. abs. (°C)", values: [4.7, 1.2, 1.9, -1.0, -3.0, -5.5, -9.3, -6.4, -5.5, -3.0, -2.0, -0.2, -9.3] },
+            { name: "Precipitación total (mm)", values: [100.1, 72.8, 107.0, 73.3, 73.5, 54.9, 58.9, 64.0, 56.4, 83.4, 75.3, 104.0, 923.6] },
+            { name: "Días de precipitaciones (≥ 0.1 mm)", values: [9, 8, 9, 9, 9, 9, 9, 8, 7, 10, 10, 10, 107] },
+            { name: "Horas de sol", values: [288.3, 234.5, 232.5, 195.0, 167.4, 120.0, 127.1, 164.3, 174.0, 210.8, 222.0, 269.7, 2405.6] },
+            { name: "Humedad relativa (%)", values: [76, 77, 79, 81, 83, 84, 81, 81, 80, 80, 77, 76, 80] }
+        ];
+
+        // Crear botón de promedios
+        this.button = document.createElement('button');
+        this.button.textContent = '📊 Obtener promedios de temperaturas';
+        this.button.style.marginTop = '15px';
+        this.button.style.padding = '10px 20px';
+        this.button.style.backgroundColor = '#4CAF50';
+        this.button.style.color = 'white';
+        this.button.style.border = 'none';
+        this.button.style.borderRadius = '5px';
+        this.button.style.cursor = 'pointer';
+        this.button.style.fontWeight = 'bold';
+
+        // Vincular método para el evento
+        this.showPromedios = this.showPromedios.bind(this);
+
+        // Renderizar la tabla y agregar el botón
+        this.render();
+        this.shadowRoot.appendChild(this.button);
+    }
+
+    // ===== MÉTODO PARA COLORES =====
+    getColor(value, min, max, isMinTemp) {
+        if (min === max) {
+            return isMinTemp ? '#0066ff' : '#ff0000';
+        }
+        const position = (value - min) / (max - min);
+        if (isMinTemp) {
+            const hue = 240 - 180 * position;
+            return `hsl(${hue}, 100%, 65%)`;
+        } else {
+            const hue = 60 * (1 - position);
+            return `hsl(${hue}, 100%, 65%)`;
+        }
+    }
+
+    // ===== MOSTRAR PROMEDIOS  =====
+    showPromedios() {
+        const tempRows = [];
+
+        // Filtrar filas de temperaturas medias
+        for (let i = 0; i < this.data.length; i++) {
+            const row = this.data[i];
+            if (
+                row.name.includes("máx. media") ||
+                row.name.includes("media (°C)") ||
+                row.name.includes("mín. media")
+            ) {
+                tempRows.push(row);
+            }
+        }
+
+        // Construir mensaje
+        let msg = " PROMEDIOS DE TEMPERATURAS:\n\n";
+        for (let i = 0; i < tempRows.length; i++) {
+            const row = tempRows[i];
+            const cleanName = row.name.replace(" (°C)", "");
+            // Calcular promedio de la fila
+            const sum = row.values.reduce((acc, val) => acc + val, 0);
+            const avg = (sum / row.values.length).toFixed(1);
+            msg += `${cleanName}: ${avg} °C\n`;
+        }
+
+        alert(msg);
+    }
+
+    // ===== CONNECTED CALLBACK =====
+    connectedCallback() {
+        this.button.addEventListener('click', this.showPromedios);
+    }
+
+    // ===== DISCONNECTED CALLBACK =====
+    disconnectedCallback() {
+        this.button.removeEventListener('click', this.showPromedios);
+    }
+
+    // ===== RENDER =====
+    render() {
+        // Limpiar shadow (pero el botón se agrega después)
+        while (this.shadowRoot.firstChild) {
+            this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+        }
+
+        // Crear tabla
+        const table = document.createElement('table');
+        table.style.borderCollapse = 'collapse';
+        table.style.width = '100%';
+        table.style.fontFamily = 'Arial, sans-serif';
+        table.style.fontSize = '14px';
+        table.style.border = '1px solid #ddd';
+
+        // ===== ENCABEZADO =====
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+        headerRow.style.backgroundColor = '#f2f2f2';
+
+        const mesHeader = document.createElement('th');
+        mesHeader.textContent = 'Mes';
+        mesHeader.style.padding = '8px';
+        mesHeader.style.textAlign = 'left';
+        mesHeader.style.border = '1px solid #ddd';
+        headerRow.appendChild(mesHeader);
+
+        for (let i = 0; i < this.months.length; i++) {
+            const th = document.createElement('th');
+            th.textContent = this.months[i];
+            th.style.padding = '8px';
+            th.style.textAlign = 'center';
+            th.style.border = '1px solid #ddd';
+            headerRow.appendChild(th);
+        }
+
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // ===== CUERPO =====
+        const tbody = document.createElement('tbody');
+
+        for (let i = 0; i < this.data.length; i++) {
+            const row = this.data[i];
+            const tr = document.createElement('tr');
+
+            // Celda de nombre
+            const nameCell = document.createElement('td');
+            nameCell.textContent = row.name;
+            nameCell.style.fontWeight = 'bold';
+            nameCell.style.padding = '8px';
+            nameCell.style.textAlign = 'left';
+            nameCell.style.border = '1px solid #ddd';
+            tr.appendChild(nameCell);
+
+            const isTempRow = row.name.startsWith('Temp.');
+            const isMinTempRow = isTempRow && row.name.includes('mín.');
+
+            // Calcular min/max para colores (solo filas de temperatura)
+            let rowMin = Infinity;
+            let rowMax = -Infinity;
+            if (isTempRow) {
+                for (let v = 0; v < row.values.length; v++) {
+                    const val = row.values[v];
+                    if (val < rowMin) rowMin = val;
+                    if (val > rowMax) rowMax = val;
+                }
+            }
+
+            // Celdas de valores
+            for (let j = 0; j < row.values.length; j++) {
+                const value = row.values[j];
+                const td = document.createElement('td');
+                td.textContent = value;
+                td.style.padding = '8px';
+                td.style.textAlign = 'center';
+                td.style.border = '1px solid #ddd';
+
+                if (isTempRow) {
+                    td.style.backgroundColor = this.getColor(value, rowMin, rowMax, isMinTempRow);
+                }
+
+                tr.appendChild(td);
+            }
+
+            tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+
+        // ===== PIE DE PÁGINA (FUENTES) =====
+        const footer = document.createElement('div');
+        footer.style.fontSize = '0.8em';
+        footer.style.marginTop = '10px';
+        footer.style.color = '#666';
+
+        const p1 = document.createElement('p');
+        p1.textContent = 'Fuente n° 1: NOAA. Servicio Meteorológico Nacional (precipitación diaria)';
+        p1.style.margin = '4px 0';
+
+        const p2 = document.createElement('p');
+        p2.textContent = 'Fuente n° 2: UNLP (sun only)';
+        p2.style.margin = '4px 0';
+
+        footer.appendChild(p1);
+        footer.appendChild(p2);
+
+        // Agregar todo al shadow
+        this.shadowRoot.appendChild(table);
+        this.shadowRoot.appendChild(footer);
+
+        // El botón se agrega después en el constructor
+    }
+}
+
+// ===== REGISTRAR EL WEB COMPONENT =====
+customElements.define('x-clima', Clima);
+
+// ===== INSTANCIAR =====
+function main() {
+    const miClima = new Clima();
+    document.body.appendChild(miClima);
+}
+
+window.onload = main;
+</script>
 </html>
