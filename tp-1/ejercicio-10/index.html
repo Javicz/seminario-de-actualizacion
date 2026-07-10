@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CSV Drop & Graph Viewer</title>
+</head>
+<body>
+
+    <x-csv-viewer></x-csv-viewer>
+
+    <script>
+        /**
+         * WebComponent que permite arrastrar un archivo CSV y mostrar un gráfico.
+         * 
+         * Métodos públicos:
+         *   - loadCSV(file) : carga un archivo CSV manualmente
+         *   - reset()       : vuelve al estado inicial
+         */
+        class CSVViewer extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+
+                // ===== ESTADO =====
+                this._csvData = null;
+                this._chart = null;
+                this._chartInitialized = false;
+
+                // ===== CREAR ESTRUCTURA =====
+                this._container = document.createElement('div');
+                this._container.style.cssText = 'width:100%;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;transition:background 0.3s;';
+
+                // Área de drop
+                this._dropZone = document.createElement('div');
+                this._dropZone.style.cssText = 'width:90%;max-width:900px;min-height:400px;border:3px dashed #94a3b8;border-radius:16px;background:#ffffff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;transition:all 0.3s;cursor:pointer;';
+                this._dropZone.id = 'drop-zone';
+
+                // Ícono
+                this._icon = document.createElement('div');
+                this._icon.textContent = '📂';
+                this._icon.style.cssText = 'font-size:64px;margin-bottom:16px;opacity:0.6;';
+
+                // Mensaje principal
+                this._msg = document.createElement('p');
+                this._msg.textContent = 'Arrastre un archivo CSV aquí';
+                this._msg.style.cssText = 'font-size:24px;font-weight:600;color:#1e293b;margin:8px 0;text-align:center;';
+
+                // Subtítulo
+                this._subMsg = document.createElement('p');
+                this._subMsg.textContent = 'o haga clic para seleccionar un archivo';
+                this._subMsg.style.cssText = 'font-size:16px;color:#64748b;margin:0;text-align:center;';
+
+                // Input oculto para selección de archivo
+                this._fileInput = document.createElement('input');
+                this._fileInput.type = 'file';
+                this._fileInput.accept = '.csv';
+                this._fileInput.style.display = 'none';
+                this._fileInput.id = 'file-input';
+
+                // Contenedor del gráfico (inicialmente oculto)
+                this._chartContainer = document.createElement('div');
+                this._chartContainer.style.cssText = 'width:100%;max-width:900px;display:none;background:#ffffff;border-radius:12px;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);margin:20px 0;';
+
+                this._chartCanvas = document.createElement('canvas');
+                this._chartCanvas.id = 'chart-canvas';
+                this._chartCanvas.style.cssText = 'width:100% !important;max-height:500px;';
+                this._chartContainer.appendChild(this._chartCanvas);
+
+                // Botón reset
+                this._resetBtn = document.createElement('button');
+                this._resetBtn.textContent = '🔄 Cargar otro archivo';
+                this._resetBtn.style.cssText = 'padding:10px 24px;background:#3b82f6;color:white;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:16px;display:none;';
+                this._resetBtn.id = 'reset-btn';
+
+                // Ensamblar
+                this._dropZone.appendChild(this._icon);
+                this._dropZone.appendChild(this._msg);
+                this._dropZone.appendChild(this._subMsg);
+                this._dropZone.appendChild(this._fileInput);
+                this._container.appendChild(this._dropZone);
+                this._container.appendChild(this._chartContainer);
+                this._container.appendChild(this._resetBtn);
+                this.shadowRoot.appendChild(this._container);
+
+                // ===== VINCULAR MÉTODOS =====
+                this._handleDragOver = this._handleDragOver.bind(this);
+                this._handleDragEnter = this._handleDragEnter.bind(this);
+                this._handleDragLeave = this._handleDragLeave.bind(this);
+                this._handleDrop = this._handleDrop.bind(this);
+                this._handleClick = this._handleClick.bind(this);
+                this._handleFileSelect = this._handleFileSelect.bind(this);
+                this._reset = this._reset.bind(this);
+            }
+
+            // ============================================================
+            //  CONNECTED / DISCONNECTED
+            // ============================================================
+            connectedCallback() {
+                this._dropZone.addEventListener('dragover', this._handleDragOver);
+                this._dropZone.addEventListener('dragenter', this._handleDragEnter);
+                this._dropZone.addEventListener('dragleave', this._handleDragLeave);
+                this._dropZone.addEventListener('drop', this._handleDrop);
+                this._dropZone.addEventListener('click', this._handleClick);
+                this._fileInput.addEventListener('change', this._handleFileSelect);
+                this._resetBtn.addEventListener('click', this._reset);
+            }
+
+            disconnectedCallback() {
+                this._dropZone.removeEventListener('dragover', this._handleDragOver);
+                this._dropZone.removeEventListener('dragenter', this._handleDragEnter);
+                this._dropZone.removeEventListener('dragleave', this._handleDragLeave);
+                this._dropZone.removeEventListener('drop', this._handleDrop);
+                this._dropZone.removeEventListener('click', this._handleClick);
+                this._fileInput.removeEventListener('change', this._handleFileSelect);
+                this._resetBtn.removeEventListener('click', this._reset);
+
+                if (this._chart) {
+                    this._chart.destroy();
+                    this._chart = null;
+                }
+            }
+
+            // ============================================================
+            //  MANEJADORES DE DRAG & DROP
+            // ============================================================
+            _handleDragOver(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                this._dropZone.style.borderColor = '#3b82f6';
+                this._dropZone.style.backgroundColor = '#eff6ff';
+                this._msg.style.color = '#1e40af';
+            }
+
+            _handleDragEnter(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                this._dropZone.style.borderColor = '#3b82f6';
+                this._dropZone.style.backgroundColor = '#eff6ff';
+                this._msg.style.color = '#1e40af';
+            }
+
+            _handleDragLeave(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                this._dropZone.style.borderColor = '#94a3b8';
+                this._dropZone.style.backgroundColor = '#ffffff';
+                this._msg.style.color = '#1e293b';
+            }
+
+            _handleDrop(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                this._dropZone.style.borderColor = '#94a3b8';
+                this._dropZone.style.backgroundColor = '#ffffff';
+                this._msg.style.color = '#1e293b';
+
+                var files = event.dataTransfer.files;
+                if (files.length > 0) {
+                    var file = files[0];
+                    this._processFile(file);
+                }
+            }
+
+            _handleClick() {
+                this._fileInput.click();
+            }
+
+            _handleFileSelect(event) {
+                var files = event.target.files;
+                if (files.length > 0) {
+                    var file = files[0];
+                    this._processFile(file);
+                }
+                this._fileInput.value = '';
+            }
+
+            // ============================================================
+            //  PROCESAR ARCHIVO
+            // ============================================================
+            _processFile(file) {
+                // Verificar extensión
+                var ext = file.name.split('.').pop().toLowerCase();
+                if (ext !== 'csv') {
+                    alert('⚠️ El archivo debe ser de tipo CSV.');
+                    return;
+                }
+
+                var self = this;
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    var text = e.target.result;
+                    self._parseCSV(text);
+                };
+                reader.onerror = function() {
+                    alert('❌ Error al leer el archivo.');
+                };
+                reader.readAsText(file, 'UTF-8');
+            }
+
+            // ============================================================
+            //  PARSEAR CSV
+            // ============================================================
+            _parseCSV(text) {
+                var lines = text.split('\n').filter(function(line) {
+                    return line.trim() !== '';
+                });
+
+                if (lines.length < 2) {
+                    alert('❌ El archivo CSV no contiene suficientes datos.');
+                    return;
+                }
+
+                // Separar encabezados
+                var headers = lines[0].split(',').map(function(h) { return h.trim(); });
+                // El primer encabezado es "Variable" o similar, el resto son meses
+                var months = headers.slice(1);
+
+                var data = [];
+                for (var i = 1; i < lines.length; i++) {
+                    var values = lines[i].split(',').map(function(v) { return v.trim(); });
+                    var name = values[0];
+                    var nums = values.slice(1).map(function(v) {
+                        var num = parseFloat(v.replace(',', '.'));
+                        return isNaN(num) ? null : num;
+                    });
+                    data.push({
+                        name: name,
+                        values: nums,
+                        months: months
+                    });
+                }
+
+                // Solo guardar filas con al menos un valor numérico
+                data = data.filter(function(row) {
+                    return row.values.some(function(v) { return v !== null; });
+                });
+
+                if (data.length === 0) {
+                    alert('❌ No se encontraron datos numéricos en el archivo.');
+                    return;
+                }
+
+                this._csvData = {
+                    months: months,
+                    data: data
+                };
+
+                this._showChart();
+            }
+
+            // ============================================================
+            //  MOSTRAR GRÁFICO
+            // ============================================================
+            _showChart() {
+                if (!this._csvData) return;
+
+                // Ocultar drop zone, mostrar gráfico
+                this._dropZone.style.display = 'none';
+                this._chartContainer.style.display = 'block';
+                this._resetBtn.style.display = 'inline-block';
+
+                var self = this;
+                // Cargar Chart.js si no está disponible
+                this._loadChartJS(function() {
+                    self._renderChart();
+                });
+            }
+
+            _loadChartJS(callback) {
+                if (typeof Chart !== 'undefined') {
+                    callback();
+                    return;
+                }
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                script.onload = callback;
+                script.onerror = function() {
+                    alert('❌ No se pudo cargar la librería Chart.js. Verifica tu conexión a internet.');
+                };
+                document.head.appendChild(script);
+            }
+
+            _renderChart() {
+                if (!this._csvData || typeof Chart === 'undefined') return;
+
+                var data = this._csvData.data;
+                var months = this._csvData.months;
+
+                // Seleccionar solo las variables de temperatura para no saturar
+                var tempData = data.filter(function(row) {
+                    return row.name.includes('Temp.') || row.name.includes('temperatura');
+                });
+
+                // Si no hay temperaturas, mostrar todas las variables numéricas
+                var displayData = tempData.length > 0 ? tempData : data;
+
+                // Limitar a 8 series para no saturar
+                if (displayData.length > 8) {
+                    displayData = displayData.slice(0, 8);
+                }
+
+                var colors = [
+                    '#ef4444', '#3b82f6', '#22c55e', '#f59e0b',
+                    '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
+                ];
+
+                var datasets = [];
+                for (var i = 0; i < displayData.length; i++) {
+                    var row = displayData[i];
+                    datasets.push({
+                        label: row.name,
+                        data: row.values.map(function(v) { return v !== null ? v : 0; }),
+                        borderColor: colors[i % colors.length],
+                        backgroundColor: colors[i % colors.length] + '33',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    });
+                }
+
+                var ctx = this._chartCanvas.getContext('2d');
+
+                if (this._chart) {
+                    this._chart.destroy();
+                }
+
+                this._chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    font: { size: 11, weight: '600' },
+                                    boxWidth: 12,
+                                    padding: 12
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Datos Meteorológicos - Mar del Plata',
+                                font: { size: 18, weight: 'bold' },
+                                color: '#1e293b'
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: false,
+                                grid: { color: '#e2e8f0' },
+                                title: {
+                                    display: true,
+                                    text: 'Valores',
+                                    font: { size: 12 }
+                                }
+                            },
+                            x: {
+                                grid: { display: false },
+                                title: {
+                                    display: true,
+                                    text: 'Meses',
+                                    font: { size: 12 }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            // ============================================================
+            //  RESET
+            // ============================================================
+            _reset() {
+                if (this._chart) {
+                    this._chart.destroy();
+                    this._chart = null;
+                }
+                this._csvData = null;
+                this._chartContainer.style.display = 'none';
+                this._resetBtn.style.display = 'none';
+                this._dropZone.style.display = 'flex';
+                this._dropZone.style.borderColor = '#94a3b8';
+                this._dropZone.style.backgroundColor = '#ffffff';
+                this._msg.style.color = '#1e293b';
+                this._fileInput.value = '';
+            }
+
+            // ============================================================
+            //  MÉTODOS PÚBLICOS
+            // ============================================================
+            loadCSV(file) {
+                this._processFile(file);
+            }
+
+            reset() {
+                this._reset();
+            }
+        }
+
+        // ============================================================
+        //  REGISTRAR E INSTANCIAR
+        // ============================================================
+        customElements.define('x-csv-viewer', CSVViewer);
+
+        window.onload = function() {
+            var viewer = new CSVViewer();
+            document.body.appendChild(viewer);
+            console.log('✅ x-csv-viewer cargado');
+            console.log('📌 Métodos públicos:');
+            console.log('  - loadCSV(file) : carga un archivo CSV manualmente');
+            console.log('  - reset()       : vuelve al estado inicial');
+        };
+    </script>
+</body>
+</html>
