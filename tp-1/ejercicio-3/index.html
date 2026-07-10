@@ -8,10 +8,11 @@
 <body>   
 </body>
 <script>
-class equalizer extends HTMLElement {
+class Equalizer extends HTMLElement {
     constructor() {
         super();
-        
+        this.attachShadow({ mode: 'open' });
+
         // ===== SLIDERS =====
         this.slider1 = document.createElement('input');
         this.slider2 = document.createElement('input');
@@ -27,7 +28,7 @@ class equalizer extends HTMLElement {
 
         // ===== CONTENEDOR =====
         this.container.style.display = 'flex';
-        this.appendChild(this.container);
+        this.shadowRoot.appendChild(this.container);
 
         // ===== ARRAY DE SLIDERS =====
         this.sliders = [
@@ -60,7 +61,7 @@ class equalizer extends HTMLElement {
         }
 
         // ===== DATA =====
-        this.data = [
+        this._data = [
             { freq: '32Hz', value: 0 },
             { freq: '64Hz', value: 0 },
             { freq: '130Hz', value: 0 },
@@ -74,6 +75,9 @@ class equalizer extends HTMLElement {
         ];
 
         // ===== CREAR BANDAS =====
+        this._valueLabels = [];
+        this._freqLabels = [];
+
         for (var j = 0; j < this.sliders.length; j++) {
             var slider = this.sliders[j];
             var bandContainer = document.createElement('div');
@@ -86,7 +90,7 @@ class equalizer extends HTMLElement {
             valueLabel.textContent = slider.value + 'dB';
 
             var freqLabel = document.createElement('p');
-            freqLabel.textContent = this.data[j].freq;
+            freqLabel.textContent = this._data[j].freq;
 
             slider.dataset.index = j;
             slider.valueLabel = valueLabel;
@@ -107,9 +111,9 @@ class equalizer extends HTMLElement {
             freqLabel.style.fontWeight = 'bold';
             valueLabel.style.minWidth = '40px';
             valueLabel.style.textAlign = 'center';
-            bandContainer.style.display = 'flex';
-            bandContainer.style.flexDirection = 'column';
-            bandContainer.style.alignItems = 'center';
+
+            this._valueLabels.push(valueLabel);
+            this._freqLabels.push(freqLabel);
         }
 
         // ===== ESTILO DEL CONTENEDOR =====
@@ -122,87 +126,117 @@ class equalizer extends HTMLElement {
         this.container.style.minHeight = '320px';
         this.container.style.boxShadow = '0 10px 40px rgba(0,0,0,0.5)';
         this.container.style.border = '1px solid #2d3748';
+
+        // ===== BIND DE MÉTODOS =====
+        this._handleSliderInput = this._handleSliderInput.bind(this);
+        this.getData = this.getData.bind(this);
+        this.setData = this.setData.bind(this);
+        this.render = this.render.bind(this);
+
+        // ===== RENDER INICIAL =====
+        this.render();
     }
 
     // ===== MANEJADOR DE INPUT =====
-    handleSliderInput(event) {
+    _handleSliderInput(event) {
         var slider = event.target;
         var index = parseInt(slider.dataset.index);
-        this.data[index].value = parseInt(slider.value);
-        slider.valueLabel.textContent = slider.value + 'dB';
+        var value = parseInt(slider.value);
+        this._data[index].value = value;
+        
+        // Actualizar label
+        var valueLabel = this._valueLabels[index];
+        valueLabel.textContent = value + 'dB';
         
         // Cambiar color según valor
-        var value = parseInt(slider.value);
         if (value > 0) {
-            slider.valueLabel.style.color = '#48bb78';
+            valueLabel.style.color = '#48bb78';
         } else if (value < 0) {
-            slider.valueLabel.style.color = '#fc8181';
+            valueLabel.style.color = '#fc8181';
         } else {
-            slider.valueLabel.style.color = '#a0aec0';
+            valueLabel.style.color = '#a0aec0';
         }
-        
-        console.log(this.data[index].freq + ' → ' + slider.value);
     }
 
     // ===== CONNECTED CALLBACK =====
     connectedCallback() {
         for (var i = 0; i < this.sliders.length; i++) {
-            this.sliders[i].oninput = this.handleSliderInput.bind(this);
+            this.sliders[i].addEventListener('input', this._handleSliderInput);
         }
     }
 
     // ===== DISCONNECTED CALLBACK =====
     disconnectedCallback() {
         for (var i = 0; i < this.sliders.length; i++) {
-            this.sliders[i].oninput = null;
+            this.sliders[i].removeEventListener('input', this._handleSliderInput);
         }
     }
 
     // ===== GET DATA =====
     getData() {
-        return this.data;
+        return this._data;
     }
 
     // ===== RENDER =====
     render() {
         for (var i = 0; i < this.sliders.length; i++) {
-            this.sliders[i].value = this.data[i].value;
-            this.sliders[i].valueLabel.textContent = this.data[i].value + 'dB';
+            // Actualizar slider
+            this.sliders[i].value = this._data[i].value;
             
-            var value = this.data[i].value;
+            // Actualizar label de frecuencia
+            this._freqLabels[i].textContent = this._data[i].freq;
+            
+            // Actualizar label de valor
+            var value = this._data[i].value;
+            var valueLabel = this._valueLabels[i];
+            valueLabel.textContent = value + 'dB';
+            
             if (value > 0) {
-                this.sliders[i].valueLabel.style.color = '#48bb78';
+                valueLabel.style.color = '#48bb78';
             } else if (value < 0) {
-                this.sliders[i].valueLabel.style.color = '#fc8181';
+                valueLabel.style.color = '#fc8181';
             } else {
-                this.sliders[i].valueLabel.style.color = '#a0aec0';
+                valueLabel.style.color = '#a0aec0';
             }
         }
     }
 
     // ===== SET DATA =====
     setData(newData) {
-        if (!newData || !Array.isArray(newData)) return;
-        this.data = newData;
+        if (!newData || !Array.isArray(newData)) {
+            console.error('setData: Se requiere un array');
+            return;
+        }
+        if (newData.length !== this._data.length) {
+            console.error('setData: El array debe tener ' + this._data.length + ' elementos');
+            return;
+        }
+        for (var i = 0; i < newData.length; i++) {
+            if (typeof newData[i].freq === 'undefined' || typeof newData[i].value === 'undefined') {
+                console.error('setData: Cada elemento debe tener freq y value');
+                return;
+            }
+        }
+        this._data = newData;
         this.render();
     }
 }
 
 // ===== REGISTRAR COMPONENTE =====
-customElements.define('x-equalizer', equalizer);
+customElements.define('x-equalizer', Equalizer);
 
 // ===== CREAR INSTANCIA =====
 function main() {
-    var myEqualizer = new equalizer();
+    var myEqualizer = new Equalizer();
     document.body.appendChild(myEqualizer);
 
-    console.log(' Equalizer cargado correctamente');
-    console.log(' Métodos:');
+    console.log('✅ Equalizer cargado correctamente');
+    console.log('📌 Métodos:');
     console.log('  - getData() : Obtener datos');
     console.log('  - setData(nuevosDatos) : Asignar datos y actualizar vista');
     console.log('  - render() : Actualizar visual');
     console.log('');
-    console.log(' Prueba desde consola:');
+    console.log('🧪 Prueba desde consola:');
     console.log('  var eq = document.querySelector("x-equalizer")');
     console.log('  eq.getData()');
     console.log('  eq.setData([{freq:"32Hz",value:5},{freq:"64Hz",value:-3},...])');
