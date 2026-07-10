@@ -18,7 +18,7 @@ class AfipInvoiceForm extends HTMLElement {
       condicionIVA: 'IVA Sujeto Exento',
       condicionVenta: 'Cuenta Corriente',
       items: [
-        { codigo: 'UGL 6- CAPITA SALUD MENTAL PERIODO 06/16', cantidad: '1,00', unidad: 'otras unidades', precio: '264002,11', bonif: '0,00', impBonif: '0,00', subtotal: '264002,11' },
+        { codigo: 'UGL 6- CAPITA SALUD PERIODO 06/16', cantidad: '1,00', unidad: 'otras unidades', precio: '264002,11', bonif: '0,00', impBonif: '0,00', subtotal: '264002,11' },
         { codigo: 'AJUSTE COMPLEMENTARIO -02/16', cantidad: '1,00', unidad: 'otras unidades', precio: '8016,22', bonif: '0,00', impBonif: '0,00', subtotal: '8016,22' },
         { codigo: 'AJUSTE COMPLEMENTARIO -03/16', cantidad: '1,00', unidad: 'otras unidades', precio: '7575,66', bonif: '0,00', impBonif: '0,00', subtotal: '7575,66' },
         { codigo: 'AJUSTE COMPLEMENTARIO -04/16', cantidad: '1,00', unidad: 'otras unidades', precio: '28457,23', bonif: '0,00', impBonif: '0,00', subtotal: '28457,23' },
