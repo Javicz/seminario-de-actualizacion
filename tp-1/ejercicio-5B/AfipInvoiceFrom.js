@@ -34,6 +34,7 @@ class AfipInvoiceForm extends HTMLElement {
     
     this._currentItems = [];
     
+    // Bind de métodos
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleAddItem = this.handleAddItem.bind(this);
     this.handleRemoveItem = this.handleRemoveItem.bind(this);
@@ -42,14 +43,75 @@ class AfipInvoiceForm extends HTMLElement {
     this.loadJSPDF = this.loadJSPDF.bind(this);
     this.getFormData = this.getFormData.bind(this);
     this.getFullInvoiceHTML = this.getFullInvoiceHTML.bind(this);
-  }
-
-  connectedCallback() {
+    this._handleItemInput = this._handleItemInput.bind(this);
+    this._handleItemRemove = this._handleItemRemove.bind(this);
+    
+    // Renderizar inicial
     this.render();
     this._currentItems = JSON.parse(JSON.stringify(this._invoiceData.items));
     this.renderItems();
   }
 
+  // ===== CONNECTED =====
+  connectedCallback() {
+    // Asignar eventos principales
+    this._form = this.shadowRoot.querySelector('#invoice-form');
+    this._addBtn = this.shadowRoot.querySelector('.btn-add-item');
+    this._pdfBtn = this.shadowRoot.querySelector('#pdf-direct-btn');
+    this._itemsContainer = this.shadowRoot.querySelector('#items-container');
+
+    if (this._form) {
+      this._form.addEventListener('submit', this.handleSubmit);
+    }
+    if (this._addBtn) {
+      this._addBtn.addEventListener('click', this.handleAddItem);
+    }
+    if (this._pdfBtn) {
+      this._pdfBtn.addEventListener('click', this.handleExportDirectPDF);
+    }
+    if (this._itemsContainer) {
+      // Delegación de eventos para los items
+      this._itemsContainer.addEventListener('input', this._handleItemInput);
+      this._itemsContainer.addEventListener('click', this._handleItemRemove);
+    }
+  }
+
+  // ===== DISCONNECTED =====
+  disconnectedCallback() {
+    if (this._form) {
+      this._form.removeEventListener('submit', this.handleSubmit);
+    }
+    if (this._addBtn) {
+      this._addBtn.removeEventListener('click', this.handleAddItem);
+    }
+    if (this._pdfBtn) {
+      this._pdfBtn.removeEventListener('click', this.handleExportDirectPDF);
+    }
+    if (this._itemsContainer) {
+      this._itemsContainer.removeEventListener('input', this._handleItemInput);
+      this._itemsContainer.removeEventListener('click', this._handleItemRemove);
+    }
+  }
+
+  // ===== DELEGACIÓN DE EVENTOS PARA ITEMS =====
+  _handleItemInput(event) {
+    var target = event.target;
+    if (target.tagName === 'INPUT' && target.dataset.index !== undefined && target.dataset.field) {
+      var index = parseInt(target.dataset.index);
+      var field = target.dataset.field;
+      this.updateItem(index, field, target.value);
+    }
+  }
+
+  _handleItemRemove(event) {
+    var target = event.target;
+    if (target.tagName === 'BUTTON' && target.dataset.index !== undefined && target.dataset.action === 'remove') {
+      var index = parseInt(target.dataset.index);
+      this.handleRemoveItem(index);
+    }
+  }
+
+  // ===== MÉTODOS DE DATOS =====
   getFormData() {
     var form = this.shadowRoot.querySelector('#invoice-form');
     var formData = {};
@@ -141,6 +203,7 @@ class AfipInvoiceForm extends HTMLElement {
   createItemRow(index, item) {
     var row = document.createElement('div');
     row.className = 'item-row';
+    row.dataset.index = index;
     
     var fields = [
       { key: 'codigo', label: 'Código', value: item.codigo || '' },
@@ -163,12 +226,10 @@ class AfipInvoiceForm extends HTMLElement {
       input.type = 'text';
       input.name = 'item_' + field.key + '_' + index;
       input.value = field.value;
+      input.dataset.index = index;
+      input.dataset.field = field.key;
       if (field.readonly) {
         input.readOnly = true;
-      } else {
-        input.addEventListener('input', function(event, idx, key) {
-          this.updateItem(idx, key, event.target.value);
-        }.bind(this, null, index, field.key));
       }
       div.appendChild(input);
       row.appendChild(div);
@@ -181,16 +242,15 @@ class AfipInvoiceForm extends HTMLElement {
     var removeText = document.createTextNode('✕');
     removeBtn.appendChild(removeText);
     removeBtn.className = 'btn-remove';
-    removeBtn.addEventListener('click', function() {
-      this.handleRemoveItem(index);
-    }.bind(this));
+    removeBtn.dataset.index = index;
+    removeBtn.dataset.action = 'remove';
     removeDiv.appendChild(removeBtn);
     row.appendChild(removeDiv);
     
     return row;
   }
 
-  // ========== CARGAR jsPDF ==========
+  // ===== CARGAR jsPDF =====
   loadJSPDF(callback) {
     if (typeof window.jspdf !== 'undefined') {
       callback();
@@ -205,7 +265,7 @@ class AfipInvoiceForm extends HTMLElement {
     document.head.appendChild(script);
   }
 
-  // ========== ABRIR FACTURA EN PESTAÑA ==========
+  // ===== GENERAR FACTURA EN PESTAÑA =====
   generateInvoice() {
     var formData = this.getFormData();
     var total = 0;
@@ -225,7 +285,7 @@ class AfipInvoiceForm extends HTMLElement {
     }
   }
 
-  // ========== HTML DE LA FACTURA ==========
+  // ===== HTML DE LA FACTURA =====
   getFullInvoiceHTML(data) {
     var itemsRows = '';
     var totalFactura = 0;
@@ -289,7 +349,7 @@ class AfipInvoiceForm extends HTMLElement {
     </body></html>`;
   }
 
-  // ========== EXPORTAR PDF DIRECTO (SIMPLE) ==========
+  // ===== EXPORTAR PDF DIRECTO =====
   handleExportDirectPDF() {
     var btn = this.shadowRoot.querySelector('#pdf-direct-btn');
     var originalText = '📄 PDF Directo';
@@ -313,13 +373,11 @@ class AfipInvoiceForm extends HTMLElement {
         var doc = new jsPDF('p', 'mm', 'a4');
         var x = 20, y = 25, lineH = 5.5;
 
-        // Título
         doc.setFontSize(22);
         doc.text('FACTURA', x, y);
         doc.setFontSize(10);
         doc.text('Comprobante Autorizado', x, y + 7);
 
-        // Datos derecha
         var rx = 190;
         var ry = 25;
         var datos = [
@@ -341,7 +399,6 @@ class AfipInvoiceForm extends HTMLElement {
         doc.setLineWidth(0.3);
         doc.line(x, y, 190, y);
 
-        // Periodo
         y += 6;
         doc.setFontSize(9);
         doc.setFillColor(249, 249, 249);
@@ -350,7 +407,6 @@ class AfipInvoiceForm extends HTMLElement {
         doc.text('Hasta: ' + (formData.periodoHasta || ''), x + 5, y + 10);
         doc.text('Fecha Vto. Pago: ' + (formData.fechaVtoPago || ''), x + 80, y + 4);
 
-        // Cliente
         y += 22;
         doc.rect(x, y - 2, 170, 22, 'F');
         doc.text('CUIT: ' + (formData.cuitCliente || ''), x + 5, y + 4);
@@ -358,7 +414,6 @@ class AfipInvoiceForm extends HTMLElement {
         doc.text('Condición IVA: ' + (formData.condicionIVA || ''), x + 5, y + 16);
         doc.text('Condición Venta: ' + (formData.condicionVenta || ''), x + 80, y + 16);
 
-        // Tabla
         y += 28;
         doc.setFillColor(26, 26, 26);
         doc.setTextColor(255, 255, 255);
@@ -394,7 +449,6 @@ class AfipInvoiceForm extends HTMLElement {
           y += 6;
         }
 
-        // Totales
         y += 6;
         doc.setLineWidth(0.5);
         doc.line(x, y, 190, y);
@@ -409,7 +463,6 @@ class AfipInvoiceForm extends HTMLElement {
         doc.text('Total: $ ' + (formData.total || '0,00'), 190, y, { align: 'right' });
         doc.setFont('helvetica', 'normal');
 
-        // CAE
         y += 12;
         doc.setFillColor(240, 240, 240);
         doc.rect(x, y - 2, 170, 16, 'F');
@@ -417,7 +470,6 @@ class AfipInvoiceForm extends HTMLElement {
         doc.text('CAE Nº: ' + (formData.caeNro || ''), 105, y + 5, { align: 'center' });
         doc.text('Fecha Vto. CAE: ' + (formData.fechaVtoCAE || ''), 105, y + 12, { align: 'center' });
 
-        // Footer
         y += 22;
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
@@ -440,11 +492,13 @@ class AfipInvoiceForm extends HTMLElement {
     });
   }
 
+  // ===== SUBMIT =====
   handleSubmit(event) {
     event.preventDefault();
     this.generateInvoice();
   }
 
+  // ===== RENDER =====
   render() {
     this.shadowRoot.textContent = '';
     
@@ -496,7 +550,7 @@ class AfipInvoiceForm extends HTMLElement {
     
     var form = document.createElement('form');
     form.id = 'invoice-form';
-    form.addEventListener('submit', this.handleSubmit);
+    // No asignar evento aquí, se hace en connectedCallback
     
     var header = document.createElement('div');
     header.className = 'form-header';
@@ -577,7 +631,7 @@ class AfipInvoiceForm extends HTMLElement {
     addBtn.type = 'button';
     addBtn.className = 'btn-add-item';
     addBtn.appendChild(document.createTextNode('➕ Agregar Item'));
-    addBtn.addEventListener('click', this.handleAddItem);
+    // No asignar evento aquí, se hace en connectedCallback
     itemsHeader.appendChild(addBtn);
     sectionItems.appendChild(itemsHeader);
     var itemsContainer = document.createElement('div');
@@ -598,7 +652,7 @@ class AfipInvoiceForm extends HTMLElement {
     pdfBtn.className = 'btn-pdf-direct';
     pdfBtn.id = 'pdf-direct-btn';
     pdfBtn.appendChild(document.createTextNode('📄 PDF Directo'));
-    pdfBtn.addEventListener('click', this.handleExportDirectPDF);
+    // No asignar evento aquí, se hace en connectedCallback
     actions.appendChild(pdfBtn);
     body.appendChild(actions);
     

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Generador de Factura AFIP</title>
   <script src="AfipInvoiceForm.js" defer></script>
   <style>
@@ -10,32 +10,66 @@
       margin: 0;
       padding: 20px;
       background: #f1f5f9;
-      font-family: -apple-system, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    
+
     .container {
       max-width: 1100px;
       margin: 0 auto;
     }
-    
+
     .header {
       text-align: center;
       margin-bottom: 30px;
       padding: 20px;
       background: white;
       border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
-    
+
     .header h1 {
       color: #1a3a5c;
       margin: 0;
       font-size: 28px;
     }
-    
+
     .header p {
       color: #64748b;
       margin: 8px 0 0 0;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+      padding: 15px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #475569;
+      font-size: 14px;
+    }
+
+    .feature-item .icon {
+      font-size: 20px;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 14px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
     }
   </style>
 </head>
@@ -44,12 +78,32 @@
     <div class="header">
       <h1>🏛️ Generador de Factura Electrónica AFIP</h1>
       <p>Complete el formulario y genere la factura con un solo clic</p>
+
+      <div class="features">
+        <div class="feature-item">
+          <span class="icon">📄</span>
+          <span>Visualización en nueva pestaña</span>
+        </div>
+        <div class="feature-item">
+          <span class="icon">🖨️</span>
+          <span>Impresión automática</span>
+        </div>
+        <div class="feature-item">
+          <span class="icon">📱</span>
+          <span>Diseño responsive</span>
+        </div>
+        <div class="feature-item">
+          <span class="icon">⚙️</span>
+          <span>Items dinámicos</span>
+        </div>
+      </div>
     </div>
-    
+
     <afip-invoice-form></afip-invoice-form>
-    
-    <div style="margin-top: 20px; text-align: center; color: #94a3b8; font-size: 14px;">
-      <p>Los datos se cargan por defecto con el ejemplo de la factura adjunta</p>
+
+    <div class="footer-note">
+      <p>💡 Los datos se cargan por defecto con el ejemplo de la factura adjunta</p>
+      <p style="margin-top: 5px;">🔧 El botón <strong>"Generar Factura"</strong> abre una nueva pestaña con el diseño completo de la factura.</p>
     </div>
   </div>
 </body>

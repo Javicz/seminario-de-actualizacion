@@ -109,7 +109,7 @@ class Clima extends HTMLElement {
 
     // ===== RENDER =====
     render() {
-        // Limpiar shadow (pero el botón se agrega después)
+        // Limpiar shadow 
         while (this.shadowRoot.firstChild) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         }
@@ -218,7 +218,6 @@ class Clima extends HTMLElement {
         this.shadowRoot.appendChild(table);
         this.shadowRoot.appendChild(footer);
 
-        // El botón se agrega después en el constructor
     }
 }
 
