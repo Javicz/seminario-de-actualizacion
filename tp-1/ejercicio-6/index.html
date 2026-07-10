@@ -44,8 +44,9 @@ class Clima extends HTMLElement {
         this.button.style.cursor = 'pointer';
         this.button.style.fontWeight = 'bold';
 
-        // Vincular método para el evento
+        // Vincular métodos
         this.showPromedios = this.showPromedios.bind(this);
+        this.getTemperaturesAverage = this.getTemperaturesAverage.bind(this);
 
         // Renderizar la tabla y agregar el botón
         this.render();
@@ -57,43 +58,56 @@ class Clima extends HTMLElement {
         if (min === max) {
             return isMinTemp ? '#0066ff' : '#ff0000';
         }
-        const position = (value - min) / (max - min);
+        var position = (value - min) / (max - min);
         if (isMinTemp) {
-            const hue = 240 - 180 * position;
-            return `hsl(${hue}, 100%, 65%)`;
+            var hue = 240 - 180 * position;
+            return 'hsl(' + hue + ', 100%, 65%)';
         } else {
-            const hue = 60 * (1 - position);
-            return `hsl(${hue}, 100%, 65%)`;
+            var hue2 = 60 * (1 - position);
+            return 'hsl(' + hue2 + ', 100%, 65%)';
         }
     }
 
-    // ===== MOSTRAR PROMEDIOS  =====
-    showPromedios() {
-        const tempRows = [];
+    // ===== OBTENER PROMEDIOS =====
+    getTemperaturesAverage() {
+        var tempRows = [];
+        var result = {};
 
         // Filtrar filas de temperaturas medias
-        for (let i = 0; i < this.data.length; i++) {
-            const row = this.data[i];
-            if (
-                row.name.includes("máx. media") ||
+        for (var i = 0; i < this.data.length; i++) {
+            var row = this.data[i];
+            if (row.name.includes("máx. media") ||
                 row.name.includes("media (°C)") ||
-                row.name.includes("mín. media")
-            ) {
+                row.name.includes("mín. media")) {
                 tempRows.push(row);
             }
         }
 
-        // Construir mensaje
-        let msg = " PROMEDIOS DE TEMPERATURAS:\n\n";
-        for (let i = 0; i < tempRows.length; i++) {
-            const row = tempRows[i];
-            const cleanName = row.name.replace(" (°C)", "");
-            // Calcular promedio de la fila
-            const sum = row.values.reduce((acc, val) => acc + val, 0);
-            const avg = (sum / row.values.length).toFixed(1);
-            msg += `${cleanName}: ${avg} °C\n`;
+        // Calcular promedios
+        for (var j = 0; j < tempRows.length; j++) {
+            var row = tempRows[j];
+            var cleanName = row.name.replace(" (°C)", "");
+            var sum = 0;
+            var count = 0;
+
+            for (var k = 0; k < row.values.length; k++) {
+                sum += row.values[k];
+                count++;
+            }
+
+            result[cleanName] = parseFloat((sum / count).toFixed(1));
         }
 
+        return result;
+    }
+
+    // ===== MOSTRAR PROMEDIOS (usa el método público) =====
+    showPromedios() {
+        var promedios = this.getTemperaturesAverage();
+        var msg = " PROMEDIOS DE TEMPERATURAS:\n\n";
+        for (var key in promedios) {
+            msg += key + ": " + promedios[key] + " °C\n";
+        }
         alert(msg);
     }
 
@@ -109,13 +123,12 @@ class Clima extends HTMLElement {
 
     // ===== RENDER =====
     render() {
-        // Limpiar shadow 
+        // Limpiar shadow (el botón se agrega después)
         while (this.shadowRoot.firstChild) {
             this.shadowRoot.removeChild(this.shadowRoot.firstChild);
         }
 
-        // Crear tabla
-        const table = document.createElement('table');
+        var table = document.createElement('table');
         table.style.borderCollapse = 'collapse';
         table.style.width = '100%';
         table.style.fontFamily = 'Arial, sans-serif';
@@ -123,19 +136,19 @@ class Clima extends HTMLElement {
         table.style.border = '1px solid #ddd';
 
         // ===== ENCABEZADO =====
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
+        var thead = document.createElement('thead');
+        var headerRow = document.createElement('tr');
         headerRow.style.backgroundColor = '#f2f2f2';
 
-        const mesHeader = document.createElement('th');
+        var mesHeader = document.createElement('th');
         mesHeader.textContent = 'Mes';
         mesHeader.style.padding = '8px';
         mesHeader.style.textAlign = 'left';
         mesHeader.style.border = '1px solid #ddd';
         headerRow.appendChild(mesHeader);
 
-        for (let i = 0; i < this.months.length; i++) {
-            const th = document.createElement('th');
+        for (var i = 0; i < this.months.length; i++) {
+            var th = document.createElement('th');
             th.textContent = this.months[i];
             th.style.padding = '8px';
             th.style.textAlign = 'center';
@@ -147,14 +160,13 @@ class Clima extends HTMLElement {
         table.appendChild(thead);
 
         // ===== CUERPO =====
-        const tbody = document.createElement('tbody');
+        var tbody = document.createElement('tbody');
 
-        for (let i = 0; i < this.data.length; i++) {
-            const row = this.data[i];
-            const tr = document.createElement('tr');
+        for (var r = 0; r < this.data.length; r++) {
+            var row = this.data[r];
+            var tr = document.createElement('tr');
 
-            // Celda de nombre
-            const nameCell = document.createElement('td');
+            var nameCell = document.createElement('td');
             nameCell.textContent = row.name;
             nameCell.style.fontWeight = 'bold';
             nameCell.style.padding = '8px';
@@ -162,24 +174,22 @@ class Clima extends HTMLElement {
             nameCell.style.border = '1px solid #ddd';
             tr.appendChild(nameCell);
 
-            const isTempRow = row.name.startsWith('Temp.');
-            const isMinTempRow = isTempRow && row.name.includes('mín.');
+            var isTempRow = row.name.startsWith('Temp.');
+            var isMinTempRow = isTempRow && row.name.includes('mín.');
 
-            // Calcular min/max para colores (solo filas de temperatura)
-            let rowMin = Infinity;
-            let rowMax = -Infinity;
+            var rowMin = Infinity;
+            var rowMax = -Infinity;
             if (isTempRow) {
-                for (let v = 0; v < row.values.length; v++) {
-                    const val = row.values[v];
+                for (var v = 0; v < row.values.length; v++) {
+                    var val = row.values[v];
                     if (val < rowMin) rowMin = val;
                     if (val > rowMax) rowMax = val;
                 }
             }
 
-            // Celdas de valores
-            for (let j = 0; j < row.values.length; j++) {
-                const value = row.values[j];
-                const td = document.createElement('td');
+            for (var c = 0; c < row.values.length; c++) {
+                var value = row.values[c];
+                var td = document.createElement('td');
                 td.textContent = value;
                 td.style.padding = '8px';
                 td.style.textAlign = 'center';
@@ -198,26 +208,24 @@ class Clima extends HTMLElement {
         table.appendChild(tbody);
 
         // ===== PIE DE PÁGINA (FUENTES) =====
-        const footer = document.createElement('div');
+        var footer = document.createElement('div');
         footer.style.fontSize = '0.8em';
         footer.style.marginTop = '10px';
         footer.style.color = '#666';
 
-        const p1 = document.createElement('p');
+        var p1 = document.createElement('p');
         p1.textContent = 'Fuente n° 1: NOAA. Servicio Meteorológico Nacional (precipitación diaria)';
         p1.style.margin = '4px 0';
 
-        const p2 = document.createElement('p');
+        var p2 = document.createElement('p');
         p2.textContent = 'Fuente n° 2: UNLP (sun only)';
         p2.style.margin = '4px 0';
 
         footer.appendChild(p1);
         footer.appendChild(p2);
 
-        // Agregar todo al shadow
         this.shadowRoot.appendChild(table);
         this.shadowRoot.appendChild(footer);
-
     }
 }
 
@@ -226,8 +234,16 @@ customElements.define('x-clima', Clima);
 
 // ===== INSTANCIAR =====
 function main() {
-    const miClima = new Clima();
+    var miClima = new Clima();
     document.body.appendChild(miClima);
+
+    // Prueba del método público desde consola
+    console.log('✅ Clima WebComponent cargado');
+    console.log('📌 Método público: getTemperaturesAverage()');
+    console.log('  - Devuelve un objeto con los promedios de temperaturas medias.');
+    console.log('🧪 Prueba desde consola:');
+    console.log('  var clima = document.querySelector("x-clima")');
+    console.log('  clima.getTemperaturesAverage()');
 }
 
 window.onload = main;

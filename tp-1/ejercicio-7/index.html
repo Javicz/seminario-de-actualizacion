@@ -8,14 +8,13 @@
 <body>   
 </body>
 <script>
-
-class clima extends HTMLElement {
+class Clima extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
         
         // ===== UNIDAD ACTUAL =====
-        this._unit = 'C'; // 'C' o 'F'
+        this._unit = 'C';
         
         // ===== MESES =====
         this.months = [
@@ -23,7 +22,7 @@ class clima extends HTMLElement {
             'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre', 'anual'
         ];
         
-        // ===== DATOS METEOROLÓGICOS (en °C) =====
+        // ===== DATOS =====
         this.data = [
             { name: "Temp. máx. abs. (°C)", values: [42.4, 39.1, 36.9, 32.5, 27.4, 22.2, 27.7, 24.7, 28.8, 34.4, 35.7, 39.4, 39.4] },
             { name: "Temp. máx. media (°C)", values: [28.3, 25.8, 23.7, 20.5, 16.8, 13.8, 13.1, 14.4, 16.0, 18.5, 21.7, 24.4, 19.6] },
@@ -36,11 +35,21 @@ class clima extends HTMLElement {
             { name: "Humedad relativa (%)", values: [76, 77, 79, 81, 83, 84, 81, 81, 80, 80, 77, 76, 80] }
         ];
         
+        // ===== CONTENEDORES  =====
+        this._tableContainer = document.createElement('div');
+        this._tableContainer.id = 'table-container';
+        this._footerContainer = document.createElement('div');
+        this._footerContainer.id = 'footer-container';
+        this._buttonContainer = document.createElement('div');
+        this._buttonContainer.id = 'button-container';
+        this._buttonContainer.style.display = 'flex';
+        this._buttonContainer.style.flexWrap = 'wrap';
+        this._buttonContainer.style.gap = '10px';
+        this._buttonContainer.style.marginTop = '15px';
+
         // ===== BOTÓN DE CAMBIO DE UNIDAD =====
         this.toggleButton = document.createElement('button');
         this.toggleButton.textContent = 'Cambiar a °F';
-        this.toggleButton.style.marginTop = '15px';
-        this.toggleButton.style.marginRight = '10px';
         this.toggleButton.style.padding = '10px 20px';
         this.toggleButton.style.backgroundColor = '#2196F3';
         this.toggleButton.style.color = 'white';
@@ -51,8 +60,7 @@ class clima extends HTMLElement {
         
         // ===== BOTÓN DE PROMEDIOS =====
         this.promedioButton = document.createElement('button');
-        this.promedioButton.textContent = 'Obtener promedios de temperaturas';
-        this.promedioButton.style.marginTop = '15px';
+        this.promedioButton.textContent = '📊 Obtener promedios de temperaturas';
         this.promedioButton.style.padding = '10px 20px';
         this.promedioButton.style.backgroundColor = '#4CAF50';
         this.promedioButton.style.color = 'white';
@@ -61,16 +69,22 @@ class clima extends HTMLElement {
         this.promedioButton.style.cursor = 'pointer';
         this.promedioButton.style.fontWeight = 'bold';
         
-        // Vincular métodos
+        // Agregar botones al contenedor de botones
+        this._buttonContainer.appendChild(this.toggleButton);
+        this._buttonContainer.appendChild(this.promedioButton);
+        
+        // ===== AGREGAR CONTENEDORES AL SHADOW =====
+        this.shadowRoot.appendChild(this._tableContainer);
+        this.shadowRoot.appendChild(this._footerContainer);
+        this.shadowRoot.appendChild(this._buttonContainer);
+        
+        // ===== VINCULAR MÉTODOS =====
         this._toggleUnit = this._toggleUnit.bind(this);
         this._showPromedios = this._showPromedios.bind(this);
+        this.getTemperaturesAverage = this.getTemperaturesAverage.bind(this);
         
-        // Renderizar
+        // ===== RENDER INICIAL =====
         this.render();
-        
-        // Agregar botones
-        this.shadowRoot.appendChild(this.toggleButton);
-        this.shadowRoot.appendChild(this.promedioButton);
     }
 
     // ===== CONVERTIR TEMPERATURA =====
@@ -81,31 +95,31 @@ class clima extends HTMLElement {
         return celsius;
     }
 
-    // ===== OBTENER SÍMBOLO DE UNIDAD =====
+    // ===== SÍMBOLO DE UNIDAD =====
     _getUnitSymbol() {
         return this._unit === 'C' ? '°C' : '°F';
     }
 
-    // ===== CONNECTED CALLBACK =====
+    // ===== CONNECTED =====
     connectedCallback() {
-        this.toggleButton.onclick = this._toggleUnit;
-        this.promedioButton.onclick = this._showPromedios;
+        this.toggleButton.addEventListener('click', this._toggleUnit);
+        this.promedioButton.addEventListener('click', this._showPromedios);
     }
 
-    // ===== DISCONNECTED CALLBACK =====
+    // ===== DISCONNECTED =====
     disconnectedCallback() {
-        this.toggleButton.onclick = null;
-        this.promedioButton.onclick = null;
+        this.toggleButton.removeEventListener('click', this._toggleUnit);
+        this.promedioButton.removeEventListener('click', this._showPromedios);
     }
 
     // ===== CAMBIAR UNIDAD =====
     _toggleUnit() {
         this._unit = this._unit === 'C' ? 'F' : 'C';
         this.toggleButton.textContent = 'Cambiar a °' + (this._unit === 'C' ? 'F' : 'C');
-        this.render();
+        this.render(); // Solo actualiza la tabla y el footer, los botones no se tocan
     }
 
-    // ===== COLORES PARA TEMPERATURAS =====
+    // ===== COLORES =====
     _getColor(value, min, max, isMinTemp) {
         if (min === max) return isMinTemp ? '#0066ff' : '#ff0000';
         var position = (value - min) / (max - min);
@@ -121,13 +135,14 @@ class clima extends HTMLElement {
     // ===== MOSTRAR PROMEDIOS =====
     _showPromedios() {
         var promedios = this.getTemperaturesAverage();
-        var msg = "PROMEDIOS DE TEMPERATURAS (" + this._getUnitSymbol() + "):\n\n";
+        var msg = " PROMEDIOS DE TEMPERATURAS (" + this._getUnitSymbol() + "):\n\n";
         for (var key in promedios) {
-          msg += key + ": " + promedios[key] + " " + this._getUnitSymbol() + "\n";
+            msg += key + ": " + promedios[key] + " " + this._getUnitSymbol() + "\n";
         }
         alert(msg);
     }
 
+    // ===== MÉTODO PÚBLICO =====
     getTemperaturesAverage() {
         var tempRows = [];
         var result = {};
@@ -158,12 +173,18 @@ class clima extends HTMLElement {
         return result;
     }
 
-    // ===== RENDER =====
+    // ===== RENDER  =====
     render() {
-        while (this.shadowRoot.firstChild) {
-            this.shadowRoot.removeChild(this.shadowRoot.firstChild);
+        // Limpiar contenedor de tabla
+        while (this._tableContainer.firstChild) {
+            this._tableContainer.removeChild(this._tableContainer.firstChild);
         }
         
+        // Limpiar contenedor de footer
+        while (this._footerContainer.firstChild) {
+            this._footerContainer.removeChild(this._footerContainer.firstChild);
+        }
+
         // ===== TABLA =====
         var table = document.createElement('table');
         table.style.borderCollapse = 'collapse';
@@ -172,7 +193,7 @@ class clima extends HTMLElement {
         table.style.fontSize = '14px';
         table.style.border = '1px solid #ddd';
 
-        // ===== ENCABEZADO =====
+        // Encabezado
         var thead = document.createElement('thead');
         var headerRow = document.createElement('tr');
         headerRow.style.backgroundColor = '#f2f2f2';
@@ -196,14 +217,13 @@ class clima extends HTMLElement {
         thead.appendChild(headerRow);
         table.appendChild(thead);
 
-        // ===== CUERPO =====
+        // Cuerpo
         var tbody = document.createElement('tbody');
         
         for (var r = 0; r < this.data.length; r++) {
             var row = this.data[r];
             var tr = document.createElement('tr');
 
-            // Nombre de la fila (actualizar unidad si es temperatura)
             var nameCell = document.createElement('td');
             var displayName = row.name;
             if (row.name.includes('Temp.') && row.name.includes('(°C)')) {
@@ -219,7 +239,6 @@ class clima extends HTMLElement {
             var isTempRow = row.name.startsWith('Temp.');
             var isMinTempRow = isTempRow && row.name.includes('mín.');
 
-            // Calcular min/max para colores (usando valores convertidos)
             var rowMin = Infinity;
             var rowMax = -Infinity;
             var convertedValues = [];
@@ -252,9 +271,9 @@ class clima extends HTMLElement {
         }
         table.appendChild(tbody);
 
-        this.shadowRoot.appendChild(table);
+        this._tableContainer.appendChild(table);
 
-        // ===== FUENTES =====
+        // ===== FOOTER =====
         var footer = document.createElement('div');
         footer.style.fontSize = '0.8em';
         footer.style.marginTop = '10px';
@@ -271,21 +290,23 @@ class clima extends HTMLElement {
         footer.appendChild(p1);
         footer.appendChild(p2);
 
-        this.shadowRoot.appendChild(footer);
-        
-        // Agregar botones al final
-        this.shadowRoot.appendChild(this.toggleButton);
-        this.shadowRoot.appendChild(this.promedioButton);
+        this._footerContainer.appendChild(footer);
     }
 }
 
 // ===== REGISTRAR COMPONENTE =====
-customElements.define('x-clima', clima);
+customElements.define('x-clima', Clima);
 
 // ===== CREAR INSTANCIA =====
 function main() {
-    var myClima = new clima();
+    var myClima = new Clima();
     document.body.appendChild(myClima);
+
+    console.log(' Clima WebComponent cargado');
+    console.log(' Método público: getTemperaturesAverage()');
+    console.log(' Prueba desde consola:');
+    console.log('  var clima = document.querySelector("x-clima")');
+    console.log('  clima.getTemperaturesAverage()');
 }
 
 window.onload = main;

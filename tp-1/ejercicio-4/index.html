@@ -8,25 +8,21 @@
 <body>   
 </body>
 <script>
-
-class chat extends HTMLElement {
+class Chat extends HTMLElement {
     constructor() {
         super();
-        
-        // ===== ELEMENTOS =====
-        this.input = document.createElement('input');
-        this.bntenviar = document.createElement('button');
-        this.contenedor = document.createElement('div');
-        this.contenedorMensajes = document.createElement('div');
-        this.indexRespuesta = 0;
+        this.attachShadow({ mode: 'open' });
 
-        // ===== CONFIGURACIÓN =====
-        this.input.type = 'text';
-        this.input.placeholder = 'Escribe un mensaje...';
-        this.bntenviar.textContent = '→';
+        // ===== ELEMENTOS =====
+        this._input = document.createElement('input');
+        this._btnEnviar = document.createElement('button');
+        this._contenedor = document.createElement('div');
+        this._contenedorMensajes = document.createElement('div');
+        this._indexRespuesta = 0;
+        this._mensajes = [];
 
         // ===== RESPUESTAS AUTOMÁTICAS =====
-        this.respuestas = [
+        this._respuestas = [
             '¡Hola! ¿Cómo estás?',
             'Todo bien por acá, ¿y vos?',
             'Me alegra escuchar eso.',
@@ -39,140 +35,210 @@ class chat extends HTMLElement {
             'Tengo que irme, hablamos luego.'
         ];
 
-        // ===== AGREGAR AL DOM =====
-        this.appendChild(this.contenedor);
-        this.contenedor.appendChild(this.contenedorMensajes);
-        this.contenedor.appendChild(this.input);
-        this.contenedor.appendChild(this.bntenviar);
+        // ===== CONFIGURAR ELEMENTOS =====
+        this._input.type = 'text';
+        this._input.placeholder = 'Escribe un mensaje...';
+        this._btnEnviar.textContent = '→';
 
         // ===== ESTILOS =====
-        // Input
-        this.input.style.padding = '10px';
-        this.input.style.borderRadius = '20px';
-        this.input.style.border = 'none';
-        this.input.style.outline = 'none';
-        this.input.style.marginTop = '10px';
-        this.input.style.flex = '1';
-        this.input.style.fontSize = '14px';
+        var style = document.createElement('style');
+        style.textContent = `
+            :host {
+                display: block;
+                font-family: Arial, sans-serif;
+            }
+            .chat-container {
+                width: 400px;
+                margin: 30px auto;
+                border: 1px solid #ccc;
+                border-radius: 10px;
+                padding: 10px;
+                background-color: #ece5dd;
+                display: flex;
+                flex-direction: column;
+            }
+            .messages-container {
+                height: 400px;
+                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                padding: 5px;
+            }
+            .input-area {
+                display: flex;
+                gap: 8px;
+                margin-top: 10px;
+            }
+            .input-area input {
+                flex: 1;
+                padding: 10px;
+                border-radius: 20px;
+                border: none;
+                outline: none;
+                font-size: 14px;
+            }
+            .input-area button {
+                padding: 10px 18px;
+                border: none;
+                border-radius: 20px;
+                background-color: #128C7E;
+                color: white;
+                cursor: pointer;
+                font-size: 18px;
+            }
+            .input-area button:hover {
+                background-color: #0d6b60;
+            }
+            .message {
+                padding: 10px 14px;
+                border-radius: 10px;
+                max-width: 70%;
+                margin: 0;
+                word-wrap: break-word;
+            }
+            .message.own {
+                align-self: flex-end;
+                background-color: #DCF8C6;
+            }
+            .message.other {
+                align-self: flex-start;
+                background-color: white;
+            }
+            /* Scroll personalizado */
+            .messages-container::-webkit-scrollbar {
+                width: 6px;
+            }
+            .messages-container::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+            .messages-container::-webkit-scrollbar-thumb {
+                background: #888;
+                border-radius: 10px;
+            }
+            .messages-container::-webkit-scrollbar-thumb:hover {
+                background: #555;
+            }
+        `;
+        this.shadowRoot.appendChild(style);
 
-        // Botón enviar
-        this.bntenviar.style.marginTop = '10px';
-        this.bntenviar.style.padding = '10px 18px';
-        this.bntenviar.style.border = 'none';
-        this.bntenviar.style.borderRadius = '20px';
-        this.bntenviar.style.backgroundColor = '#128C7E';
-        this.bntenviar.style.color = 'white';
-        this.bntenviar.style.cursor = 'pointer';
-        this.bntenviar.style.fontSize = '18px';
+        // ===== CONTENEDOR PRINCIPAL =====
+        this._contenedor.className = 'chat-container';
+        this._contenedorMensajes.className = 'messages-container';
 
-        // Contenedor principal
-        this.contenedor.style.width = '400px';
-        this.contenedor.style.margin = '30px auto';
-        this.contenedor.style.border = '1px solid #ccc';
-        this.contenedor.style.borderRadius = '10px';
-        this.contenedor.style.padding = '10px';
-        this.contenedor.style.backgroundColor = '#ece5dd';
-        this.contenedor.style.display = 'flex';
-        this.contenedor.style.flexDirection = 'column';
+        // ===== INPUT Y BOTÓN =====
+        var inputArea = document.createElement('div');
+        inputArea.className = 'input-area';
+        inputArea.appendChild(this._input);
+        inputArea.appendChild(this._btnEnviar);
 
-        // Contenedor de mensajes
-        this.contenedorMensajes.style.height = '400px';
-        this.contenedorMensajes.style.overflowY = 'auto';
-        this.contenedorMensajes.style.display = 'flex';
-        this.contenedorMensajes.style.flexDirection = 'column';
-        this.contenedorMensajes.style.gap = '10px';
-        this.contenedorMensajes.style.padding = '5px';
+        // ===== ENSAMBLAR =====
+        this._contenedor.appendChild(this._contenedorMensajes);
+        this._contenedor.appendChild(inputArea);
+        this.shadowRoot.appendChild(this._contenedor);
+
+        // ===== BIND DE MÉTODOS =====
+        this._handleSend = this._handleSend.bind(this);
+        this._handleKeyPress = this._handleKeyPress.bind(this);
+        this.addMessage = this.addMessage.bind(this);
+        this.getMessages = this.getMessages.bind(this);
+        this.clearMessages = this.clearMessages.bind(this);
+
+        // Mensaje de bienvenida
+        this.addMessage('¡Bienvenido al chat!', false);
+        this.addMessage('Escribe un mensaje para empezar.', false);
     }
 
-    // ===== ENVIAR MENSAJE =====
-    sendMessage() {
-        var mensaje = this.input.value.trim();
+    // ===== CONNECTED =====
+    connectedCallback() {
+        this._btnEnviar.addEventListener('click', this._handleSend);
+        this._input.addEventListener('keypress', this._handleKeyPress);
+    }
+
+    // ===== DISCONNECTED =====
+    disconnectedCallback() {
+        this._btnEnviar.removeEventListener('click', this._handleSend);
+        this._input.removeEventListener('keypress', this._handleKeyPress);
+    }
+
+    // ===== MANEJADOR DE ENVÍO =====
+    _handleSend() {
+        var mensaje = this._input.value.trim();
         if (mensaje === '') return;
 
-        // Crear mensaje propio
-        var p = document.createElement('p');
-        p.textContent = mensaje;
-        this.contenedorMensajes.appendChild(p);
-        
-        // Estilo mensaje propio
-        p.style.padding = '10px 14px';
-        p.style.borderRadius = '10px';
-        p.style.maxWidth = '70%';
-        p.style.alignSelf = 'flex-end';
-        p.style.backgroundColor = '#DCF8C6';
-        p.style.margin = '0';
-        p.style.wordWrap = 'break-word';
-
-        // Limpiar input
-        this.input.value = '';
+        // Agregar mensaje propio
+        this.addMessage(mensaje, true);
+        this._input.value = '';
 
         // Respuesta automática
-        this.receiveMessage();
+        var self = this;
+        setTimeout(function() {
+            var respuesta = self._respuestas[self._indexRespuesta % self._respuestas.length];
+            self._indexRespuesta++;
+            self.addMessage(respuesta, false);
+        }, 500);
+    }
+
+    // ===== MANEJADOR DE TECLA ENTER =====
+    _handleKeyPress(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            this._handleSend();
+        }
+    }
+
+    // ===== MÉTODO PÚBLICO: AGREGAR MENSAJE =====
+    addMessage(texto, esPropio) {
+        if (!texto || typeof texto !== 'string') {
+            console.error('addMessage: el mensaje debe ser un texto válido');
+            return;
+        }
+
+        var mensaje = document.createElement('p');
+        mensaje.textContent = texto;
+        mensaje.className = 'message' + (esPropio ? ' own' : ' other');
+
+        this._contenedorMensajes.appendChild(mensaje);
+        this._mensajes.push({ texto: texto, esPropio: esPropio });
 
         // Scroll al final
-        this.contenedorMensajes.scrollTop = this.contenedorMensajes.scrollHeight;
+        this._contenedorMensajes.scrollTop = this._contenedorMensajes.scrollHeight;
     }
 
-    // ===== RESPUESTA AUTOMÁTICA =====
-    receiveMessage() {
-        var respuestaBot = this.respuestas[this.indexRespuesta % this.respuestas.length];
-        this.indexRespuesta++;
-
-        var respuestaP = document.createElement('p');
-        respuestaP.textContent = respuestaBot;
-        this.contenedorMensajes.appendChild(respuestaP);
-
-        // Estilo mensaje de bot
-        respuestaP.style.padding = '10px 14px';
-        respuestaP.style.borderRadius = '10px';
-        respuestaP.style.maxWidth = '70%';
-        respuestaP.style.alignSelf = 'flex-start';
-        respuestaP.style.backgroundColor = 'white';
-        respuestaP.style.margin = '0';
-        respuestaP.style.wordWrap = 'break-word';
-
-        // Scroll al final
-        this.contenedorMensajes.scrollTop = this.contenedorMensajes.scrollHeight;
+    // ===== MÉTODO PÚBLICO: OBTENER MENSAJES =====
+    getMessages() {
+        return this._mensajes;
     }
 
-    // ===== CONNECTED CALLBACK =====
-    connectedCallback() {
-        // Asignar evento al botón
-        this.bntenviar.onclick = this.sendMessage.bind(this);
-
-        // Asignar evento Enter al input
-        this.input.onkeypress = function(event) {
-            if (event.key === 'Enter') {
-                this.sendMessage();
-            }
-        }.bind(this);
+    // ===== MÉTODO PÚBLICO: LIMPIAR MENSAJES =====
+    clearMessages() {
+        while (this._contenedorMensajes.firstChild) {
+            this._contenedorMensajes.removeChild(this._contenedorMensajes.firstChild);
+        }
+        this._mensajes = [];
+        this._indexRespuesta = 0;
     }
-
-    // ===== DISCONNECTED CALLBACK =====
-    disconnectedCallback() {
-        this.bntenviar.onclick = null;
-        this.input.onkeypress = null;
-    }
-
 }
 
 // ===== REGISTRAR COMPONENTE =====
-customElements.define('x-chat', chat);
+customElements.define('x-chat', Chat);
 
 // ===== CREAR INSTANCIA =====
 function main() {
-    var myChat = new chat();
+    var myChat = new Chat();
     document.body.appendChild(myChat);
-
-    // Mensaje de bienvenida
-    myChat.addMessage('¡Bienvenido al chat! ', false);
-    myChat.addMessage('Escribe un mensaje para empezar.', false);
 
     console.log(' Chat WebComponent cargado');
     console.log(' Métodos:');
-    console.log('  - addMessage(texto, esPropio)');
-    console.log('  - getMessages()');
-    console.log('  - clearMessages()');
+    console.log('  - addMessage(texto, esPropio) : Agregar mensaje');
+    console.log('  - getMessages() : Obtener todos los mensajes');
+    console.log('  - clearMessages() : Limpiar todos los mensajes');
+    console.log('');
+    console.log(' Prueba desde consola:');
+    console.log('  var chat = document.querySelector("x-chat")');
+    console.log('  chat.addMessage("Hola mundo", true)');
+    console.log('  chat.getMessages()');
 }
 
 window.onload = main;

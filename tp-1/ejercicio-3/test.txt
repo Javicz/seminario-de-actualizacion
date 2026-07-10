@@ -1,0 +1,19 @@
+// Desde la consola del navegador
+var eq = document.querySelector('x-equalizer');
+
+// Obtener datos
+console.log(eq.getData());
+
+// Asignar nuevos datos (actualiza la vista automáticamente)
+eq.setData([
+    { freq: '32Hz', value: 5 },
+    { freq: '64Hz', value: -3 },
+    { freq: '130Hz', value: 8 },
+    { freq: '260Hz', value: -6 },
+    { freq: '500Hz', value: 0 },
+    { freq: '1k', value: 4 },
+    { freq: '2k', value: -2 },
+    { freq: '4k', value: 7 },
+    { freq: '8.3k', value: -5 },
+    { freq: '16.5k', value: 3 }
+]);
