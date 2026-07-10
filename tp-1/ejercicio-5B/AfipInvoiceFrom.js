@@ -50,15 +50,17 @@ class AfipInvoiceForm extends HTMLElement {
     this.render();
     this._currentItems = JSON.parse(JSON.stringify(this._invoiceData.items));
     this.renderItems();
-  }
 
-  // ===== CONNECTED =====
-  connectedCallback() {
-    // Asignar eventos principales
+        // Asignar eventos principales
     this._form = this.shadowRoot.querySelector('#invoice-form');
     this._addBtn = this.shadowRoot.querySelector('.btn-add-item');
     this._pdfBtn = this.shadowRoot.querySelector('#pdf-direct-btn');
     this._itemsContainer = this.shadowRoot.querySelector('#items-container');
+
+  }
+
+  // ===== CONNECTED =====
+  connectedCallback() {
 
     if (this._form) {
       this._form.addEventListener('submit', this.handleSubmit);
